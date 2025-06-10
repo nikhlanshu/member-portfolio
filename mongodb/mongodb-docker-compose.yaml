@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: orioz_mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: oriozadmin
+      MONGO_INITDB_ROOT_PASSWORD: oriozsecret
+      MONGO_INITDB_DATABASE: orioz-community
+    volumes:
+      - orioz_mongo_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    networks:
+      - orioz-network
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: orioz_mongo_express
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_ADMINUSERNAME: oriozadmin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: oriozsecret
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: password
+    depends_on:
+      - mongodb
+    networks:
+      - orioz-network
+
+volumes:
+  orioz_mongo_data:
+
+networks:
+  orioz-network:
+    driver: bridge
