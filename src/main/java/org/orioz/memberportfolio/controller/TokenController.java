@@ -2,7 +2,10 @@ package org.orioz.memberportfolio.controller;
 
 import jakarta.validation.Valid;
 import org.orioz.memberportfolio.dtos.auth.TokenRequest;
+import org.orioz.memberportfolio.dtos.auth.TokenResponse;
 import org.orioz.memberportfolio.service.auth.TokenService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,7 +25,10 @@ public class TokenController {
     }
 
     @PostMapping
-    public Mono<String> issueToken(@Valid @RequestBody TokenRequest tokenRequest) {
-        return tokenService.issueToken(tokenRequest);
+    public Mono<ResponseEntity<TokenResponse>> issueToken(@Valid @RequestBody TokenRequest tokenRequest) {
+        return tokenService.issueToken(tokenRequest)
+                .map(memberResponse -> ResponseEntity
+                        .status(HttpStatus.CREATED)
+                        .body(memberResponse));
     }
 }

@@ -1,5 +1,6 @@
 package org.orioz.memberportfolio.service.admin;
 
+import org.orioz.memberportfolio.config.AdminConfig;
 import org.orioz.memberportfolio.dtos.admin.AdminCreationRequest;
 import org.orioz.memberportfolio.dtos.admin.ConfirmMemberRequest;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
@@ -24,10 +25,12 @@ import java.util.stream.Collectors;
 @Service
 public class AdminMemberService implements AdminService {
     private final MemberRepository memberRepository;
+    private final AdminConfig adminConfig;
 
     @Autowired
-    public AdminMemberService(MemberRepository memberRepository) {
+    public AdminMemberService(MemberRepository memberRepository, AdminConfig adminConfig) {
         this.memberRepository = memberRepository;
+        this.adminConfig = adminConfig;
     }
 
     public Mono<MemberResponse> addAdminRole(AdminCreationRequest adminCreationRequest) {
@@ -41,7 +44,7 @@ public class AdminMemberService implements AdminService {
                     // Check if maximum 2 admins limit is reached
                     return memberRepository.findByRolesContaining(Member.Role.ADMIN).count()
                             .flatMap(adminCount -> {
-                                if (adminCount >= 2) {
+                                if (adminCount >= adminConfig.getMaxMember()) {
                                     return Mono.error(new MaximumAdminThresholdException("Maximum 2 admin members allowed."));
                                 }
                                 List<Member.Role> existingRoles = member.getRoles();

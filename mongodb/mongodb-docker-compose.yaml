@@ -27,6 +27,7 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: oriozsecret
       ME_CONFIG_BASICAUTH_USERNAME: admin
       ME_CONFIG_BASICAUTH_PASSWORD: password
+    restart: unless-stopped
     depends_on:
       - mongodb
     networks:

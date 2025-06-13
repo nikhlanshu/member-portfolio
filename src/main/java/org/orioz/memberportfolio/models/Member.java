@@ -131,7 +131,7 @@ public class Member {
     }
 
     public enum Role {
-        MEMBER, ADMIN, FINANCE, PRIME
+        MEMBER, ADMIN, FINANCE
     }
 
     public static Member toMember(MemberRegistrationRequest request, PasswordEncoder passwordEncoder) {

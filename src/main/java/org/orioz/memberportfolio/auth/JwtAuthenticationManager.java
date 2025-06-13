@@ -1,5 +1,6 @@
 package org.orioz.memberportfolio.auth;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -13,9 +14,8 @@ import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
-
     private final JwtService jwtService;
-
+    @Autowired
     public JwtAuthenticationManager(JwtService jwtService) {
         this.jwtService = jwtService;
     }
@@ -23,7 +23,6 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
     @Override
     public Mono<Authentication> authenticate(Authentication authentication) {
         String token = authentication.getCredentials().toString();
-
         return jwtService.parseToken(token)
                 .map(payload -> {
                     List<GrantedAuthority> authorities = payload.getRoles().stream()

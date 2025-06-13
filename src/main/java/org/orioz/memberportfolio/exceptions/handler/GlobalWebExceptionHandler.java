@@ -6,6 +6,7 @@ import org.orioz.memberportfolio.exceptions.ErrorResponse;
 import org.orioz.memberportfolio.exceptions.InvalidCredentialException;
 import org.orioz.memberportfolio.exceptions.MaximumAdminThresholdException;
 import org.orioz.memberportfolio.exceptions.MemberNotFoundException;
+import org.orioz.memberportfolio.exceptions.UnauthorizedException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,10 +36,22 @@ public class GlobalWebExceptionHandler {
         );
         return Mono.just(ResponseEntity.status(status).body(errorResponse));
     }
-
     @ExceptionHandler(InvalidCredentialException.class)
     public Mono<ResponseEntity<ErrorResponse>> invalidCredentialException(
             InvalidCredentialException ex, ServerWebExchange exchange) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED; // 409 Conflict
+        ErrorResponse errorResponse = new ErrorResponse(
+                status.value(),
+                status.getReasonPhrase(),
+                ex.getMessage(),
+                String.format("%s: %s", exchange.getRequest().getMethod().name(), exchange.getRequest().getPath().value())
+        );
+        return Mono.just(ResponseEntity.status(status).body(errorResponse));
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public Mono<ResponseEntity<ErrorResponse>> unauthorizedException(
+            UnauthorizedException ex, ServerWebExchange exchange) {
         HttpStatus status = HttpStatus.UNAUTHORIZED; // 409 Conflict
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
