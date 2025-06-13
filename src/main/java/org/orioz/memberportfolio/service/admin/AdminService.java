@@ -1,10 +1,10 @@
-package org.orioz.memberportfolio.service;
+package org.orioz.memberportfolio.service.admin;
 
-import org.orioz.memberportfolio.dtos.AdminCreationRequest;
-import org.orioz.memberportfolio.dtos.ConfirmMemberRequest;
-import org.orioz.memberportfolio.dtos.MemberResponse;
-import org.orioz.memberportfolio.dtos.PageResponse;
-import org.orioz.memberportfolio.dtos.RejectMemberRequest;
+import org.orioz.memberportfolio.dtos.admin.AdminCreationRequest;
+import org.orioz.memberportfolio.dtos.admin.ConfirmMemberRequest;
+import org.orioz.memberportfolio.dtos.member.MemberResponse;
+import org.orioz.memberportfolio.dtos.admin.PageResponse;
+import org.orioz.memberportfolio.dtos.admin.RejectMemberRequest;
 import org.orioz.memberportfolio.models.Member;
 import org.springframework.data.domain.Pageable;
 import reactor.core.publisher.Mono;

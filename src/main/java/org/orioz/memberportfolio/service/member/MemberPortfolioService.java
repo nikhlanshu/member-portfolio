@@ -1,7 +1,7 @@
-package org.orioz.memberportfolio.service;
+package org.orioz.memberportfolio.service.member;
 
-import org.orioz.memberportfolio.dtos.MemberRegistrationRequest;
-import org.orioz.memberportfolio.dtos.MemberResponse;
+import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
+import org.orioz.memberportfolio.dtos.member.MemberResponse;
 import org.orioz.memberportfolio.exceptions.EmailAlreadyRegisteredException;
 import org.orioz.memberportfolio.models.Member;
 import org.orioz.memberportfolio.repositories.MemberRepository;

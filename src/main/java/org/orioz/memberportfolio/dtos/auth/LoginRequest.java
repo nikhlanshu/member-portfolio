@@ -1,4 +1,4 @@
-package org.orioz.memberportfolio.dtos;
+package org.orioz.memberportfolio.dtos.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
@@ -9,9 +9,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AdminCreationRequest {
+public class LoginRequest {
     @Email
     private String email;
+
     @NotEmpty
-    private String memberId;
+    private String password;
 }

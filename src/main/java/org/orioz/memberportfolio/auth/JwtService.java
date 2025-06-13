@@ -1,46 +1,71 @@
 package org.orioz.memberportfolio.auth;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
+import org.orioz.memberportfolio.dtos.auth.TokenPayload;
+import org.orioz.memberportfolio.models.Member;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.List;
 
-@Component
+@Service
 public class JwtService {
 
     private static final String SECRET = "k8F^s@3pL!zA#9vRb7Ty6mZ*qD&XhN$WcMj4EuP!nLx2YgTfCz@VmKr#B1UsPw3De";
-
     private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 
-    public String generateToken(UserDetails userDetails) {
-        return Jwts.builder()
-                .setSubject(userDetails.getUsername())
-                .claim("roles", userDetails.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority).toList())
-                .setIssuedAt(new Date())
-                .setExpiration(Date.from(Instant.now().plus(1, ChronoUnit.DAYS)))
-                .signWith(SECRET_KEY, SignatureAlgorithm.HS512)
-                .compact();
+    public Mono<String> generateToken(Member member) {
+        Instant issuedAt = Instant.now();
+        Instant expiration = issuedAt.plus(2, ChronoUnit.HOURS);
+
+        TokenPayload payload = new TokenPayload(
+                member.getId(),
+                member.getRoles().stream().map(Enum::name).toList(),
+                member.getStatus().name(),
+                issuedAt,
+                expiration
+        );
+
+        return Mono.fromCallable(() -> Jwts.builder()
+                .setSubject(payload.getSubject())
+                .claim("roles", payload.getRoles())
+                .claim("status", payload.getStatus())
+                .setIssuedAt(Date.from(payload.getIssuedAt()))
+                .setExpiration(Date.from(payload.getExpiration()))
+                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
+                .compact()
+        ).subscribeOn(Schedulers.boundedElastic());
     }
 
-    public String extractUsername(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+    public Mono<TokenPayload> parseToken(String token) {
+        return Mono.fromCallable(() -> {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(SECRET_KEY)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            return new TokenPayload(
+                    claims.getSubject(),
+                    claims.get("roles", List.class),
+                    claims.get("status", String.class),
+                    claims.getIssuedAt().toInstant(),
+                    claims.getExpiration().toInstant()
+            );
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    public boolean validateToken(String token, UserDetails userDetails) {
-        return extractUsername(token).equals(userDetails.getUsername());
+    public Mono<Boolean> validateToken(String token, String expectedMemberId) {
+        return parseToken(token)
+                .map(payload -> payload.getSubject().equals(expectedMemberId));
     }
 }

@@ -3,7 +3,7 @@ package org.orioz.memberportfolio.models;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.orioz.memberportfolio.dtos.MemberRegistrationRequest;
+import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;

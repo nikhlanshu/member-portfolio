@@ -1,4 +1,4 @@
-package org.orioz.memberportfolio.dtos;
+package org.orioz.memberportfolio.dtos.member;
 
 import org.orioz.memberportfolio.models.Member;
 import lombok.Data;

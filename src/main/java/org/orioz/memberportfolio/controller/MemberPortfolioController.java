@@ -2,9 +2,9 @@ package org.orioz.memberportfolio.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
-import org.orioz.memberportfolio.dtos.MemberRegistrationRequest;
-import org.orioz.memberportfolio.dtos.MemberResponse;
-import org.orioz.memberportfolio.service.MemberService;
+import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
+import org.orioz.memberportfolio.dtos.member.MemberResponse;
+import org.orioz.memberportfolio.service.member.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

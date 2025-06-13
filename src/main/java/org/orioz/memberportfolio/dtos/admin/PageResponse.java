@@ -1,4 +1,4 @@
-package org.orioz.memberportfolio.dtos;
+package org.orioz.memberportfolio.dtos.admin;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

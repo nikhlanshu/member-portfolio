@@ -1,4 +1,4 @@
-package org.orioz.memberportfolio.dtos;
+package org.orioz.memberportfolio.dtos.member;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
