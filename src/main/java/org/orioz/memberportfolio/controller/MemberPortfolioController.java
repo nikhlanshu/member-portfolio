@@ -6,6 +6,7 @@ import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
 import org.orioz.memberportfolio.service.member.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +24,6 @@ import reactor.core.publisher.Mono;
 @RequestMapping(value = "/api/v1/members", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 public class MemberPortfolioController {
     private final MemberService memberService;
-
     @Autowired
     public MemberPortfolioController(MemberService memberService) {
         this.memberService = memberService;
@@ -37,9 +37,9 @@ public class MemberPortfolioController {
      */
     @PostMapping(value = "/register")
     public Mono<ResponseEntity<MemberResponse>> registerMember(@Valid @RequestBody MemberRegistrationRequest request) {
-        return memberService.registerMember(request).map(ResponseEntity::ok);
+        return memberService.registerMember(request)
+                .map(memberResponse -> ResponseEntity.status(HttpStatus.CREATED).body(memberResponse));
     }
-
     @PreAuthorize("hasAuthority('MEMBER')")
     @GetMapping(value = "/{email}")
     public Mono<ResponseEntity<MemberResponse>> getMember(@Email @PathVariable String email) {

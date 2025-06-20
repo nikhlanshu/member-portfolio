@@ -149,7 +149,6 @@ public class GlobalWebExceptionHandler {
         return Mono.just(ResponseEntity.status(status).body(errorResponse));
     }
 
-
     // --- Generic Catch-All Exception ---
     // This is a fallback for any unhandled RuntimeException
     @ExceptionHandler(RuntimeException.class)

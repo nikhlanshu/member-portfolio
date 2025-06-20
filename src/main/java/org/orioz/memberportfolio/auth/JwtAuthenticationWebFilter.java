@@ -28,8 +28,7 @@ public class JwtAuthenticationWebFilter implements WebFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-
-        if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+        if (authHeader.startsWith(BEARER_PREFIX)) {
             String authToken = authHeader.substring(BEARER_PREFIX.length());
             Authentication auth = new UsernamePasswordAuthenticationToken(null, authToken);
 
@@ -41,7 +40,6 @@ public class JwtAuthenticationWebFilter implements WebFilter {
                     })
                     .onErrorResume(e -> chain.filter(exchange)); // Skip authentication on error
         }
-
         return chain.filter(exchange); // Continue filter chain if no token
     }
 }

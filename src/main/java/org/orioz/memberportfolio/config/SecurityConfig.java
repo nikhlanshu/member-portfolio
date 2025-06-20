@@ -14,13 +14,10 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
-
     private final JwtAuthenticationWebFilter jwtAuthenticationWebFilter;
-
     public SecurityConfig(JwtAuthenticationWebFilter jwtAuthenticationWebFilter) {
         this.jwtAuthenticationWebFilter = jwtAuthenticationWebFilter;
     }
-
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
@@ -34,7 +31,6 @@ public class SecurityConfig {
                 .addFilterAt(jwtAuthenticationWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
     }
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

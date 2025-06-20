@@ -5,9 +5,9 @@ import java.time.LocalDateTime;
 // Using a record for conciseness in Java 16+
 public record ErrorResponse(
         int status,
-        String error, // HTTP status reason phrase (e.g., "Bad Request")
+        String error,
         String message,
-        String path, // The request path that caused the error
+        String path,
         LocalDateTime timestamp
 ) {
     // You can add constructors or helper methods if needed

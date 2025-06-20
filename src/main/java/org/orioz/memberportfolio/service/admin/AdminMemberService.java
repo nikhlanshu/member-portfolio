@@ -2,10 +2,8 @@ package org.orioz.memberportfolio.service.admin;
 
 import org.orioz.memberportfolio.config.AdminConfig;
 import org.orioz.memberportfolio.dtos.admin.AdminCreationRequest;
-import org.orioz.memberportfolio.dtos.admin.ConfirmMemberRequest;
-import org.orioz.memberportfolio.dtos.member.MemberResponse;
 import org.orioz.memberportfolio.dtos.admin.PageResponse;
-import org.orioz.memberportfolio.dtos.admin.RejectMemberRequest;
+import org.orioz.memberportfolio.dtos.member.MemberResponse;
 import org.orioz.memberportfolio.exceptions.AlreadyHasAdminRoleException;
 import org.orioz.memberportfolio.exceptions.MaximumAdminThresholdException;
 import org.orioz.memberportfolio.exceptions.MemberNotFoundException;
@@ -59,7 +57,7 @@ public class AdminMemberService implements AdminService {
     }
 
     @Override
-    public Mono<MemberResponse> confirmMember(String memberId, ConfirmMemberRequest confirmMemberRequest) {
+    public Mono<MemberResponse> confirmMember(String memberId) {
         return memberRepository.findById(memberId)
                 .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + memberId)))
                 .flatMap(member -> {
@@ -76,7 +74,7 @@ public class AdminMemberService implements AdminService {
     }
 
     @Override
-    public Mono<MemberResponse> rejectMember(String memberId, RejectMemberRequest rejectMemberRequest) {
+    public Mono<MemberResponse> rejectMember(String memberId) {
         return memberRepository.findById(memberId)
                 .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + memberId)))
                 .flatMap(member -> {
@@ -113,8 +111,6 @@ public class AdminMemberService implements AdminService {
                     List<MemberResponse> memberResponses = memberPage.getContent().stream()
                             .map(MemberResponse::fromMember)
                             .collect(Collectors.toList());
-
-                    // Create and return the final PageResponse<MemberResponse> DTO
                     return PageResponse.fromPage(new PageImpl<>(
                             memberResponses,
                             memberPage.getPageable(),

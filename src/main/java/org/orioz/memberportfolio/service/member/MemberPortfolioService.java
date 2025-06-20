@@ -14,13 +14,11 @@ import reactor.core.publisher.Mono;
 public class MemberPortfolioService implements MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
-
     @Autowired
     public MemberPortfolioService(MemberRepository memberRepository, PasswordEncoder passwordEncoder) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
     }
-
     @Override
     public Mono<MemberResponse> registerMember(MemberRegistrationRequest request) {
         return memberRepository.findByEmail(request.getEmail())
@@ -29,7 +27,6 @@ public class MemberPortfolioService implements MemberService {
                 .cast(Member.class)
                 .map(MemberResponse::fromMember);
     }
-
     @Override
     public Mono<MemberResponse> getMember(String email) {
         return memberRepository.findByEmail(email)

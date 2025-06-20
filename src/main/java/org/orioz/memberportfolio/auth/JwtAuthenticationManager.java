@@ -19,7 +19,6 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
     public JwtAuthenticationManager(JwtService jwtService) {
         this.jwtService = jwtService;
     }
-
     @Override
     public Mono<Authentication> authenticate(Authentication authentication) {
         String token = authentication.getCredentials().toString();

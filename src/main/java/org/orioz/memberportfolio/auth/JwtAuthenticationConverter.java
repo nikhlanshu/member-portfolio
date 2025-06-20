@@ -10,9 +10,7 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class JwtAuthenticationConverter implements ServerAuthenticationConverter {
-
     private static final String BEARER_PREFIX = "Bearer ";
-
     @Override
     public Mono<Authentication> convert(ServerWebExchange exchange) {
         return Mono.justOrEmpty(exchange.getRequest()

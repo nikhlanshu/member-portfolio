@@ -19,7 +19,6 @@ import java.util.List;
 
 @Service
 public class JwtService {
-
     private static final String SECRET = "k8F^s@3pL!zA#9vRb7Ty6mZ*qD&XhN$WcMj4EuP!nLx2YgTfCz@VmKr#B1UsPw3De";
     private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 

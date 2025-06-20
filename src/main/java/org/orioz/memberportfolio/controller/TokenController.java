@@ -5,6 +5,7 @@ import org.orioz.memberportfolio.dtos.auth.TokenRequest;
 import org.orioz.memberportfolio.dtos.auth.TokenResponse;
 import org.orioz.memberportfolio.service.auth.TokenService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,15 +16,12 @@ import reactor.core.publisher.Mono;
 
 @Validated
 @RestController
-@RequestMapping("/api/v1/token")
+@RequestMapping(value = "/api/v1/token", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 public class TokenController {
-
     private final TokenService tokenService;
-
     public TokenController(TokenService tokenService) {
         this.tokenService = tokenService;
     }
-
     @PostMapping
     public Mono<ResponseEntity<TokenResponse>> issueToken(@Valid @RequestBody TokenRequest tokenRequest) {
         return tokenService.issueToken(tokenRequest)
