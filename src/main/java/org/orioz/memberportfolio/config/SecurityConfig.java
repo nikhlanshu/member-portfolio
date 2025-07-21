@@ -1,6 +1,7 @@
 package org.orioz.memberportfolio.config;
 
 import org.orioz.memberportfolio.auth.JwtAuthenticationWebFilter;
+import org.orioz.memberportfolio.auth.SecurityProperties;
 import org.orioz.memberportfolio.models.Member;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +16,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @EnableWebFluxSecurity
 public class SecurityConfig {
     private final JwtAuthenticationWebFilter jwtAuthenticationWebFilter;
-    public SecurityConfig(JwtAuthenticationWebFilter jwtAuthenticationWebFilter) {
+    public SecurityConfig(JwtAuthenticationWebFilter jwtAuthenticationWebFilter, SecurityProperties securityProperties) {
         this.jwtAuthenticationWebFilter = jwtAuthenticationWebFilter;
     }
     @Bean
