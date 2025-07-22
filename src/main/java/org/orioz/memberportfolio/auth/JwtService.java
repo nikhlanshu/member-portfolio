@@ -4,7 +4,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.dtos.auth.TokenPayload;
+import org.orioz.memberportfolio.exceptions.UnauthorizedException;
 import org.orioz.memberportfolio.models.Member;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -17,14 +19,19 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 
+@Slf4j
 @Service
 public class JwtService {
-    private static final String SECRET = "k8F^s@3pL!zA#9vRb7Ty6mZ*qD&XhN$WcMj4EuP!nLx2YgTfCz@VmKr#B1UsPw3De";
-    private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    private final SecretKey secretKey;
+    private final SecurityProperties securityProperties;
+    public JwtService(SecurityProperties securityProperties) {
+        this.secretKey = Keys.hmacShaKeyFor(securityProperties.getSecret().getBytes(StandardCharsets.UTF_8));
+        this.securityProperties = securityProperties;
+    }
 
     public Mono<String> generateToken(Member member) {
         Instant issuedAt = Instant.now();
-        Instant expiration = issuedAt.plus(2, ChronoUnit.HOURS);
+        Instant expiration = issuedAt.plus(securityProperties.getExpiry().getDuration(), securityProperties.getExpiry().getUnit());
 
         TokenPayload payload = new TokenPayload(
                 member.getId(),
@@ -40,7 +47,7 @@ public class JwtService {
                 .claim("status", payload.getStatus())
                 .setIssuedAt(Date.from(payload.getIssuedAt()))
                 .setExpiration(Date.from(payload.getExpiration()))
-                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact()
         ).subscribeOn(Schedulers.boundedElastic());
     }
@@ -48,7 +55,7 @@ public class JwtService {
     public Mono<TokenPayload> parseToken(String token) {
         return Mono.fromCallable(() -> {
             Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(SECRET_KEY)
+                    .setSigningKey(secretKey)
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
@@ -67,4 +74,16 @@ public class JwtService {
         return parseToken(token)
                 .map(payload -> payload.getSubject().equals(expectedMemberId));
     }
+
+    public Mono<TokenPayload> inspectToken(String token) {
+        return parseToken(token)
+                .map(tokenPayload -> {
+                    if (tokenPayload.getExpiration().isBefore(Instant.now())) {
+                        log.error("Token has expired");
+                        throw new UnauthorizedException("Token has expired");
+                    }
+                    return tokenPayload;
+                });
+    }
+
 }

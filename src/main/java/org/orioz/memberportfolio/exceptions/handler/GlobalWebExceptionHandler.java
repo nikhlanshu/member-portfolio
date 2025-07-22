@@ -154,12 +154,7 @@ public class GlobalWebExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public Mono<ResponseEntity<ErrorResponse>> handleGenericRuntimeException(
             RuntimeException ex, org.springframework.web.server.ServerWebExchange exchange) {
-        // IMPORTANT: Log the exception for debugging purposes.
-        // In production, use a proper logging framework (e.g., SLF4J with Logback/Log4j2).
-        System.err.println("An unhandled error occurred: " + ex.getMessage());
-        ex.printStackTrace(); // For development, print stack trace
-
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR; // 500 Internal Server Error
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
                 status.getReasonPhrase(),

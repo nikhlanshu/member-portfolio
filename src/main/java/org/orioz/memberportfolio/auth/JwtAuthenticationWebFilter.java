@@ -38,19 +38,19 @@ public class JwtAuthenticationWebFilter implements WebFilter {
         if (authHeader == null || authHeader.trim().isEmpty()) {
             return Mono.error(new UnauthorizedException("Missing or empty Authorization header"));
         }
-        if (authHeader.startsWith(BEARER_PREFIX)) {
-            String authToken = authHeader.substring(BEARER_PREFIX.length());
-            Authentication auth = new UsernamePasswordAuthenticationToken(null, authToken);
-
-            return authenticationManager.authenticate(auth)
-                    .flatMap(authentication -> {
-                        SecurityContextImpl securityContext = new SecurityContextImpl(authentication);
-                        return chain.filter(exchange)
-                                .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
-                    })
-                    .onErrorResume(e -> Mono.error(new UnauthorizedException(String.format("Invalid JWT token due to %s", e.getCause().getMessage()))));
-
+        if (!authHeader.startsWith(BEARER_PREFIX)) {
+            return Mono.error(new UnauthorizedException("Not a Bearer Authorization header"));
         }
-        return chain.filter(exchange);
+        String authToken = authHeader.substring(BEARER_PREFIX.length());
+        Authentication auth = new UsernamePasswordAuthenticationToken(null, authToken);
+        return authenticationManager.authenticate(auth)
+                .flatMap(authentication -> {
+                    SecurityContextImpl securityContext = new SecurityContextImpl(authentication);
+                    return chain.filter(exchange)
+                            .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
+                })
+                .onErrorResume(e -> Mono.error(
+                        new UnauthorizedException(String.format("Invalid JWT token due to %s", e.getMessage())))
+                );
     }
 }

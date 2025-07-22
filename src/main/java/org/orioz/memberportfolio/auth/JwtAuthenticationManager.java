@@ -1,5 +1,7 @@
 package org.orioz.memberportfolio.auth;
 
+import lombok.extern.slf4j.Slf4j;
+import org.orioz.memberportfolio.exceptions.UnauthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -12,6 +14,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
     private final JwtService jwtService;
@@ -22,16 +25,18 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
     @Override
     public Mono<Authentication> authenticate(Authentication authentication) {
         String token = authentication.getCredentials().toString();
-        return jwtService.parseToken(token)
+        return jwtService.inspectToken(token)
                 .map(payload -> {
+                    log.info("Token has not expired. So Getting next set up validatoin");
                     List<GrantedAuthority> authorities = payload.getRoles().stream()
                             .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toList());
-
-                    return (Authentication) new UsernamePasswordAuthenticationToken(
-                            payload.getSubject(), token, authorities
-                    );
+                    log.debug("Listed Authorities: "+authorities);
+                    return (Authentication) new UsernamePasswordAuthenticationToken(payload.getSubject(), token, authorities);
                 })
-                .onErrorResume(Throwable.class, e -> Mono.empty()); // Catch all errors
+                .onErrorResume(e -> {
+                    log.error("Error occurred "+e.getMessage());
+                    return Mono.error(new UnauthorizedException(e.getMessage()));
+                });
     }
 }
