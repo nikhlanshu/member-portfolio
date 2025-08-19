@@ -27,7 +27,7 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
         String token = authentication.getCredentials().toString();
         return jwtService.inspectToken(token)
                 .map(payload -> {
-                    log.info("Token has not expired. So Getting next set up validatoin");
+                    log.info("Token has not expired. So Getting next set up validation");
                     List<GrantedAuthority> authorities = payload.getRoles().stream()
                             .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toList());

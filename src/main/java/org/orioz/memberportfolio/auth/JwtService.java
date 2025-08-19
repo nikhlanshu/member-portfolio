@@ -15,7 +15,6 @@ import reactor.core.scheduler.Schedulers;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 
@@ -30,6 +29,7 @@ public class JwtService {
     }
 
     public Mono<String> generateToken(Member member) {
+        log.info(String.format("generate token called for userId : %s", member.getId()));
         Instant issuedAt = Instant.now();
         Instant expiration = issuedAt.plus(securityProperties.getExpiry().getDuration(), securityProperties.getExpiry().getUnit());
 
@@ -53,6 +53,7 @@ public class JwtService {
     }
 
     public Mono<TokenPayload> parseToken(String token) {
+        log.info(String.format("parsing token token for: %s", token));
         return Mono.fromCallable(() -> {
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(secretKey)
@@ -79,7 +80,7 @@ public class JwtService {
         return parseToken(token)
                 .map(tokenPayload -> {
                     if (tokenPayload.getExpiration().isBefore(Instant.now())) {
-                        log.error("Token has expired");
+                        log.warn("Token has expired");
                         throw new UnauthorizedException("Token has expired");
                     }
                     return tokenPayload;
