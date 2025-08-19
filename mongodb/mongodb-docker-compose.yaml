@@ -15,6 +15,12 @@ services:
       - ./mongo-init:/docker-entrypoint-initdb.d
     networks:
       - orioz-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
   mongo-express:
     image: mongo-express:latest
@@ -29,7 +35,8 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: password
     restart: unless-stopped
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - orioz-network
 
