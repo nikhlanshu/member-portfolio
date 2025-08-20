@@ -1,4 +1,4 @@
-package org.orioz.memberportfolio.controller;
+package org.orioz.memberportfolio.web;
 
 
 import org.springframework.beans.factory.annotation.Autowired;

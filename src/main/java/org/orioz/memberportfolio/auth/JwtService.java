@@ -71,17 +71,21 @@ public class JwtService {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    public Mono<Boolean> validateToken(String token, String expectedMemberId) {
-        return parseToken(token)
-                .map(payload -> payload.getSubject().equals(expectedMemberId));
-    }
-
     public Mono<TokenPayload> inspectToken(String token) {
         return parseToken(token)
                 .map(tokenPayload -> {
                     if (tokenPayload.getExpiration().isBefore(Instant.now())) {
                         log.warn("Token has expired");
                         throw new UnauthorizedException("Token has expired");
+                    }
+                    if (tokenPayload.getRoles().stream().noneMatch(role -> role.equals(Member.Role.MEMBER.name()))) {
+                        log.warn("Not a member");
+                        throw new UnauthorizedException("Not a member");
+                    }
+
+                    if (!tokenPayload.getStatus().equals(Member.Status.CONFIRMED.name())) {
+                        log.warn("Member Not Confirmed Yet");
+                        throw new UnauthorizedException("Member Not Confirmed Yet");
                     }
                     return tokenPayload;
                 });

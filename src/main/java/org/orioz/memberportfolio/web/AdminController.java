@@ -1,4 +1,4 @@
-package org.orioz.memberportfolio.controller;
+package org.orioz.memberportfolio.web;
 
 import jakarta.validation.Valid;
 import org.orioz.memberportfolio.dtos.admin.AdminCreationRequest;

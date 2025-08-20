@@ -28,8 +28,13 @@ public class MemberPortfolioService implements MemberService {
                 .map(MemberResponse::fromMember);
     }
     @Override
-    public Mono<MemberResponse> getMember(String email) {
+    public Mono<MemberResponse> getMemberByEmail(String email) {
         return memberRepository.findByEmail(email)
+                .map(MemberResponse::fromMember);
+    }
+    @Override
+    public Mono<MemberResponse> getMemberById(String id) {
+        return memberRepository.findById(id)
                 .map(MemberResponse::fromMember);
     }
 

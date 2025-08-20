@@ -1,10 +1,10 @@
 package org.orioz.memberportfolio.config;
 
 import org.orioz.memberportfolio.auth.JwtAuthenticationWebFilter;
-import org.orioz.memberportfolio.auth.SecurityProperties;
 import org.orioz.memberportfolio.models.Member;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -14,9 +14,10 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 
 @Configuration
 @EnableWebFluxSecurity
+@EnableReactiveMethodSecurity
 public class SecurityConfig {
     private final JwtAuthenticationWebFilter jwtAuthenticationWebFilter;
-    public SecurityConfig(JwtAuthenticationWebFilter jwtAuthenticationWebFilter, SecurityProperties securityProperties) {
+    public SecurityConfig(JwtAuthenticationWebFilter jwtAuthenticationWebFilter) {
         this.jwtAuthenticationWebFilter = jwtAuthenticationWebFilter;
     }
     @Bean

@@ -6,5 +6,7 @@ import reactor.core.publisher.Mono;
 
 public interface MemberService {
     Mono<MemberResponse> registerMember(MemberRegistrationRequest request);
-    Mono<MemberResponse> getMember(String email);
+    Mono<MemberResponse> getMemberByEmail(String email);
+    Mono<MemberResponse> getMemberById(String id);
+
 }

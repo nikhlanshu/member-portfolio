@@ -1,7 +1,8 @@
-package org.orioz.memberportfolio.controller;
+package org.orioz.memberportfolio.web;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotEmpty;
 import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
 import org.orioz.memberportfolio.service.member.MemberService;
@@ -40,9 +41,17 @@ public class MemberPortfolioController {
         return memberService.registerMember(request)
                 .map(memberResponse -> ResponseEntity.status(HttpStatus.CREATED).body(memberResponse));
     }
-    @PreAuthorize("hasAuthority('MEMBER')")
-    @GetMapping(value = "/{email}")
-    public Mono<ResponseEntity<MemberResponse>> getMember(@Email @PathVariable String email) {
-        return memberService.getMember(email).map(ResponseEntity::ok);
+    @GetMapping("/{email}")
+    @PreAuthorize("@entitlementValidator.validateEntitlement(#email)")
+    public Mono<ResponseEntity<MemberResponse>> getMemberByEmail(@Email @PathVariable String email) {
+        return memberService.getMemberByEmail(email)
+                .map(ResponseEntity::ok);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("@entitlementValidator.validateEntitlementById(#id)")
+    public Mono<ResponseEntity<MemberResponse>> getMemberById(@NotEmpty @PathVariable String id) {
+        return memberService.getMemberById(id)
+                .map(ResponseEntity::ok);
     }
 }
