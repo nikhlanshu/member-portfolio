@@ -1,5 +1,6 @@
 package org.orioz.memberportfolio.service.admin;
 
+import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.config.AdminConfig;
 import org.orioz.memberportfolio.dtos.admin.AdminCreationRequest;
 import org.orioz.memberportfolio.dtos.admin.PageResponse;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class AdminMemberService implements AdminService {
     private final MemberRepository memberRepository;
@@ -32,24 +34,34 @@ public class AdminMemberService implements AdminService {
     }
 
     public Mono<MemberResponse> addAdminRole(AdminCreationRequest adminCreationRequest) {
+        log.info("Attempting to add ADMIN role to memberId={}", adminCreationRequest.getMemberId());
+
         return memberRepository.findById(adminCreationRequest.getMemberId())
                 .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + adminCreationRequest.getMemberId())))
                 .flatMap(member -> {
-                    // Check if member already has ADMIN role
+                    log.debug("Member retrieved: {}", member);
                     if (member.getRoles() != null && member.getRoles().contains(Member.Role.ADMIN)) {
+                        log.warn("Member {} already has ADMIN role", member.getId());
                         return Mono.error(new AlreadyHasAdminRoleException("Member already has ADMIN role."));
                     }
-                    // Check if maximum 2 admins limit is reached
+
                     return memberRepository.findByRolesContaining(Member.Role.ADMIN).count()
                             .flatMap(adminCount -> {
+                                log.debug("Current number of admins: {}", adminCount);
                                 if (adminCount >= adminConfig.getMaxMember()) {
-                                    return Mono.error(new MaximumAdminThresholdException("Maximum 2 admin members allowed."));
+                                    log.warn("Maximum number of admin members reached: {}", adminConfig.getMaxMember());
+                                    return Mono.error(new MaximumAdminThresholdException(
+                                            "Maximum " + adminConfig.getMaxMember() + " admin members allowed."));
                                 }
+
                                 List<Member.Role> existingRoles = member.getRoles();
                                 existingRoles.add(Member.Role.ADMIN);
                                 member.setRoles(existingRoles);
                                 member.setUpdatedAt(LocalDateTime.now());
-                                return memberRepository.save(member);
+
+                                log.info("Adding ADMIN role to member {} and saving", member.getId());
+                                return memberRepository.save(member)
+                                        .doOnSuccess(saved -> log.debug("Member saved: {}", saved));
                             })
                             .cast(Member.class)
                             .map(MemberResponse::fromMember);
@@ -57,60 +69,71 @@ public class AdminMemberService implements AdminService {
     }
 
     @Override
-    public Mono<MemberResponse> confirmMember(String memberId) {
-        return memberRepository.findById(memberId)
-                .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + memberId)))
+    public Mono<MemberResponse> confirmMember(String memberEmail) {
+        log.info("Confirming member with ID={}", memberEmail);
+        return memberRepository.findByEmail(memberEmail)
+                .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + memberEmail)))
                 .flatMap(member -> {
+                    log.debug("Member retrieved for confirmation: {}", member);
                     if (member.getStatus() == Member.Status.PENDING) {
                         member.setStatus(Member.Status.CONFIRMED);
                         member.setUpdatedAt(LocalDateTime.now());
+                        log.info("Member {} confirmed", memberEmail);
                         return memberRepository.save(member)
+                                .doOnSuccess(saved -> log.debug("Member saved after confirmation: {}", saved))
                                 .map(MemberResponse::fromMember);
                     } else {
-                        // If not PENDING, throw error or return existing member response
-                        return Mono.error(new MemberNotInPendingStatusException(String.format("Member Id %s not in pending status (current status: %s)", member.getId(), member.getStatus())));
+                        log.warn("Cannot confirm member {} as status is not PENDING (current status: {})",
+                                member.getId(), member.getStatus());
+                        return Mono.error(new MemberNotInPendingStatusException(String.format(
+                                "Member Id %s not in pending status (current status: %s)",
+                                member.getId(), member.getStatus())));
                     }
                 });
     }
 
     @Override
-    public Mono<MemberResponse> rejectMember(String memberId) {
-        return memberRepository.findById(memberId)
-                .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + memberId)))
+    public Mono<MemberResponse> rejectMember(String memberEmail) {
+        log.info("Rejecting member with ID={}", memberEmail);
+        return memberRepository.findByEmail(memberEmail)
+                .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + memberEmail)))
                 .flatMap(member -> {
+                    log.debug("Member retrieved for rejection: {}", member);
                     if (member.getStatus() == Member.Status.PENDING) {
                         member.setStatus(Member.Status.REJECTED);
                         member.setUpdatedAt(LocalDateTime.now());
+                        log.info("Member {} rejected", memberEmail);
                         return memberRepository.save(member)
+                                .doOnSuccess(saved -> log.debug("Member saved after rejection: {}", saved))
                                 .map(MemberResponse::fromMember);
                     } else {
-                        // If not PENDING, throw error or return existing member response
-                        return Mono.error(new MemberNotInPendingStatusException(String.format("Member Id %s not in pending status (current status: %s)", member.getId(), member.getStatus())));
+                        log.warn("Cannot reject member {} as status is not PENDING (current status: {})",
+                                member.getId(), member.getStatus());
+                        return Mono.error(new MemberNotInPendingStatusException(String.format(
+                                "Member Id %s not in pending status (current status: %s)",
+                                member.getId(), member.getStatus())));
                     }
                 });
     }
 
     @Override
     public Mono<PageResponse<MemberResponse>> getMembersByStatus(Member.Status status, Pageable pageable) {
-        // 1. Get the Flux of members for the current page and convert to List
+        log.info("Fetching members with status={} and pageable={}", status, pageable);
         Mono<List<Member>> membersMono = memberRepository.findByStatus(status, pageable).collectList();
-
-        // 2. Get the total count of members matching the status
         Mono<Long> countMono = memberRepository.countByStatus(status);
 
-        // 3. Combine both results to create a Page<Member> object
         return Mono.zip(membersMono, countMono)
                 .map(tuple -> {
                     List<Member> members = tuple.getT1();
                     Long totalCount = tuple.getT2();
-                    // Create the Spring Data Page<Member>
+                    log.debug("Fetched {} members with status={}, totalCount={}", members.size(), status, totalCount);
                     return new PageImpl<>(members, pageable, totalCount);
                 })
                 .map(memberPage -> {
-                    // Convert Page<Member> content to List<MemberResponse>
                     List<MemberResponse> memberResponses = memberPage.getContent().stream()
                             .map(MemberResponse::fromMember)
                             .collect(Collectors.toList());
+                    log.debug("Converted members to MemberResponse: {}", memberResponses);
                     return PageResponse.fromPage(new PageImpl<>(
                             memberResponses,
                             memberPage.getPageable(),

@@ -30,7 +30,7 @@ public class TokenService {
 
     public Mono<TokenResponse> issueToken(TokenRequest tokenRequest) {
         log.info("Issue Token is invoked");
-        return memberRepository.findById(tokenRequest.getUsername())
+        return memberRepository.findByEmail(tokenRequest.getUsername())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.debug("No member found for userId: {}", tokenRequest.getUsername());
                     return Mono.error(new MemberNotFoundException(

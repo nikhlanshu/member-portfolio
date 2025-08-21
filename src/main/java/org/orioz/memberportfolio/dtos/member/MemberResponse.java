@@ -17,6 +17,7 @@ public class MemberResponse {
     private String firstName;
     private String lastName;
     private String email;
+    private String userId;
     private LocalDate dateOfBirth;
     private List<Member.AddressInfo> addresses;
     private List<Member.ContactInfo> contacts;
@@ -32,6 +33,7 @@ public class MemberResponse {
         response.setFirstName(member.getFirstName());
         response.setLastName(member.getLastName());
         response.setEmail(member.getEmail());
+        response.setUserId(member.getUserId());
         response.setDateOfBirth(member.getDateOfBirth());
         response.setAddresses(member.getAddresses());
         response.setContacts(member.getContacts());

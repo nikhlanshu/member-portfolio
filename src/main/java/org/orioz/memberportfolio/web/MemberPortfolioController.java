@@ -2,7 +2,6 @@ package org.orioz.memberportfolio.web;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
 import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
 import org.orioz.memberportfolio.service.member.MemberService;
@@ -48,10 +47,10 @@ public class MemberPortfolioController {
                 .map(ResponseEntity::ok);
     }
 
-    @GetMapping("/{id}")
+   /* @GetMapping("/{id}")
     @PreAuthorize("@entitlementValidator.validateEntitlementById(#id)")
     public Mono<ResponseEntity<MemberResponse>> getMemberById(@NotEmpty @PathVariable String id) {
         return memberService.getMemberById(id)
                 .map(ResponseEntity::ok);
-    }
+    }*/
 }

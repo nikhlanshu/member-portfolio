@@ -29,4 +29,6 @@ public interface MemberRepository extends ReactiveMongoRepository<Member, String
      * This is needed to build the totalElements field for pagination.
      */
     Mono<Long> countByStatus(Member.Status status);
+
+    Mono<Member> findByUserId(String userId);
 }

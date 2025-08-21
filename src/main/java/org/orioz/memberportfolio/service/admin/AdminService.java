@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 
 public interface AdminService {
     Mono<MemberResponse> addAdminRole(AdminCreationRequest adminCreationRequest);
-    Mono<MemberResponse> confirmMember(String memberId);
-    Mono<MemberResponse> rejectMember(String memberId);
+    Mono<MemberResponse> confirmMember(String memberEmail);
+    Mono<MemberResponse> rejectMember(String memberEmail);
     Mono<PageResponse<MemberResponse>> getMembersByStatus(Member.Status status, Pageable pageable);
 }

@@ -6,6 +6,7 @@ import org.orioz.memberportfolio.exceptions.ErrorResponse;
 import org.orioz.memberportfolio.exceptions.InvalidCredentialException;
 import org.orioz.memberportfolio.exceptions.MaximumAdminThresholdException;
 import org.orioz.memberportfolio.exceptions.MemberNotFoundException;
+import org.orioz.memberportfolio.exceptions.MemberNotInPendingStatusException;
 import org.orioz.memberportfolio.exceptions.UnauthorizedException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
@@ -106,6 +107,19 @@ public class GlobalWebExceptionHandler {
     public Mono<ResponseEntity<ErrorResponse>> handleMemberNotFoundException(
             MemberNotFoundException ex, ServerWebExchange exchange) {
         HttpStatus status = HttpStatus.NOT_FOUND; // 404 Not Found
+        ErrorResponse errorResponse = new ErrorResponse(
+                status.value(),
+                status.getReasonPhrase(),
+                ex.getMessage(),
+                exchange.getRequest().getPath().toString()
+        );
+        return Mono.just(ResponseEntity.status(status).body(errorResponse));
+    }
+
+    @ExceptionHandler(MemberNotInPendingStatusException.class)
+    public Mono<ResponseEntity<ErrorResponse>> memberNotInPendingStatusException(
+            MemberNotInPendingStatusException ex, ServerWebExchange exchange) {
+        HttpStatus status = HttpStatus.CONFLICT;
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
                 status.getReasonPhrase(),

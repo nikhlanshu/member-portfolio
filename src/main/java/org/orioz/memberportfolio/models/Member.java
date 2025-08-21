@@ -30,6 +30,8 @@ public class Member {
     @Id
     private String id;
 
+    private String userId;
+
     private String firstName;
     private String lastName;
 
@@ -90,11 +92,10 @@ public class Member {
     public static class AddressInfo {
         private String type; // e.g., "LOCAL", "OVERSEAS", "MAILING"
         private String street;
+        private String suburb;
         private String city;
         private String state;
-        private String zipCode;
-        private String postCode; // For international postal codes
-        private String province; // For regions like Canadian provinces
+        private String postCode;
         private String country;
         private boolean primary;
     }
@@ -144,6 +145,7 @@ public class Member {
         member.setFirstName(request.getFirstName());
         member.setLastName(request.getLastName());
         member.setEmail(request.getEmail());
+        member.setUserId(extractUserId(request.getEmail()));
         member.setPassword(passwordEncoder.encode(request.getPassword())); // !!! IMPORTANT: This password needs to be HASHED !!!
         member.setDateOfBirth(request.getDateOfBirth());
 
@@ -167,4 +169,16 @@ public class Member {
         member.setUpdatedAt(LocalDateTime.now());
         return member;
     }
+
+    public static String extractUserId(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email cannot be null or blank");
+        }
+        int atIndex = email.lastIndexOf('@');
+        if (atIndex <= 0) { // no @ or starts with @
+            throw new IllegalArgumentException("Invalid email: " + email);
+        }
+        return email.substring(0, atIndex).trim().toLowerCase();
+    }
+
 }

@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -40,6 +41,7 @@ public class AdminController {
      * @return Mono of ResponseEntity with paginated MemberResponse for pending members.
      */
     @GetMapping(value = "/members/pending")
+    @PreAuthorize("@entitlementValidator.validateAdminEntitlement()")
     public Mono<ResponseEntity<PageResponse<MemberResponse>>> getPendingMembers(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
@@ -58,25 +60,27 @@ public class AdminController {
     /**
      * Endpoint for an admin to approve a pending member's registration.
      *
-     * @param memberId               The ID of the member to approve.
+     * @param memberEmail               The ID of the member to approve.
      * @return Updated MemberResponse.
      */
-    @PatchMapping(value = "/members/{memberId}/confirm")
-    public Mono<ResponseEntity<MemberResponse>> approveMember(@PathVariable String memberId) {
-        return adminService.confirmMember(memberId)
+    @PreAuthorize("@entitlementValidator.validateAdminEntitlement()")
+    @PatchMapping(value = "/members/{memberEmail}/confirm")
+    public Mono<ResponseEntity<MemberResponse>> approveMember(@PathVariable String memberEmail) {
+        return adminService.confirmMember(memberEmail)
                 .map(ResponseEntity::ok);
     }
 
     /**
      * Endpoint for an admin to reject a pending member's registration.
      *
-     * @param memberId             The ID of the member to reject.
+     * @param memberEmail             The ID of the member to reject.
      * @return Updated MemberResponse.
      */
-    @PatchMapping(value = "/members/{memberId}/reject")
+    @PreAuthorize("@entitlementValidator.validateAdminEntitlement()")
+    @PatchMapping(value = "/members/{memberEmail}/reject")
     public Mono<ResponseEntity<MemberResponse>> rejectMember(
-            @PathVariable String memberId) {
-        return adminService.rejectMember(memberId)
+            @PathVariable String memberEmail) {
+        return adminService.rejectMember(memberEmail)
                 .map(ResponseEntity::ok);
     }
 
@@ -86,6 +90,7 @@ public class AdminController {
      * @param request AdminCreationRequest containing member ID.
      * @return Updated MemberResponse.
      */
+    @PreAuthorize("@entitlementValidator.validateAdminEntitlement()")
     @PatchMapping(value = "/add-admin")
     public Mono<ResponseEntity<MemberResponse>> addAdmin(
             @Valid @RequestBody AdminCreationRequest request) {
