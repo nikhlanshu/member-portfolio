@@ -1,7 +1,9 @@
 package org.orioz.memberportfolio.service.auth;
 
+import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.auth.JwtService;
 import org.orioz.memberportfolio.dtos.auth.LoginRequest;
+import org.orioz.memberportfolio.dtos.auth.LoginResponse;
 import org.orioz.memberportfolio.exceptions.InvalidCredentialException;
 import org.orioz.memberportfolio.models.Member;
 import org.orioz.memberportfolio.repositories.MemberRepository;
@@ -10,8 +12,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Service
 public class LogInService {
+
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -25,19 +29,38 @@ public class LogInService {
         this.jwtService = jwtService;
     }
 
-    public Mono<String> login(LoginRequest loginRequest) {
+    public Mono<LoginResponse> login(LoginRequest loginRequest) {
+        log.info("Login attempt for email: {}", loginRequest.getEmail());
 
         return memberRepository.findByEmail(loginRequest.getEmail())
-                .switchIfEmpty(Mono.error(new InvalidCredentialException("Invalid credentials")))
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("No member found with email: {}", loginRequest.getEmail());
+                    return Mono.error(new InvalidCredentialException("Invalid credentials"));
+                }))
                 .flatMap(member -> {
+                    log.debug("Checking status for member: {}", member.getEmail());
                     if (!member.getStatus().equals(Member.Status.CONFIRMED)) {
+                        log.warn("Member not confirmed: {}", member.getEmail());
                         return Mono.error(new InvalidCredentialException("User not confirmed"));
                     }
+
+                    log.debug("Validating password for member: {}", member.getEmail());
                     if (!passwordEncoder.matches(loginRequest.getPassword(), member.getPassword())) {
+                        log.warn("Invalid password for member: {}", member.getEmail());
                         return Mono.error(new InvalidCredentialException("Invalid credentials"));
                     }
 
-                    return jwtService.generateToken(member);
+                    log.info("Login successful for member: {}", member.getEmail());
+
+                    // Generate tokens in parallel
+                    return Mono.zip(
+                            jwtService.generateAccessToken(member),
+                            jwtService.generateIdToken(member)
+                    ).map(tuple -> new LoginResponse(tuple.getT1(), tuple.getT2()));
+                })
+                .onErrorResume(error -> {
+                    log.error("error occurred: ", error.fillInStackTrace());
+                            return Mono.error(error);
                 });
 
     }

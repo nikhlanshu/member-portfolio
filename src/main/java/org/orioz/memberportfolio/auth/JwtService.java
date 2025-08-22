@@ -5,7 +5,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
-import org.orioz.memberportfolio.dtos.auth.TokenPayload;
+import org.orioz.memberportfolio.dtos.auth.AccessTokenPayload;
+import org.orioz.memberportfolio.dtos.auth.IDTokenPayload;
 import org.orioz.memberportfolio.exceptions.UnauthorizedException;
 import org.orioz.memberportfolio.models.Member;
 import org.springframework.stereotype.Service;
@@ -28,12 +29,42 @@ public class JwtService {
         this.securityProperties = securityProperties;
     }
 
-    public Mono<String> generateToken(Member member) {
-        log.info(String.format("generate token called for userId : %s", member.getId()));
+    public Mono<String> generateIdToken(Member member) {
+        log.info(String.format("generate ID token called for userId : %s", member.getId()));
         Instant issuedAt = Instant.now();
         Instant expiration = issuedAt.plus(securityProperties.getExpiry().getDuration(), securityProperties.getExpiry().getUnit());
 
-        TokenPayload payload = new TokenPayload(
+        IDTokenPayload payload = new IDTokenPayload(
+                member.getId(),
+                member.getStatus().name(),
+                member.getFirstName(),
+                member.getLastName(),
+                member.getEmail(),
+                member.getDateOfBirth(),
+                issuedAt,
+                expiration
+        );
+
+        return Mono.fromCallable(() -> Jwts.builder()
+                .setSubject(payload.getSubject())
+                .claim("status", payload.getStatus())
+                .claim("firstName", payload.getFirstName())
+                .claim("lastName", payload.getLastName())
+                .claim("dateOfBirth", payload.getDob().toString())
+                .claim("email", payload.getEmail())
+                .setIssuedAt(Date.from(payload.getIssuedAt()))
+                .setExpiration(Date.from(payload.getExpiration()))
+                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .compact()
+        ).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    public Mono<String> generateAccessToken(Member member) {
+        log.info(String.format("generate Access token called for userId : %s", member.getId()));
+        Instant issuedAt = Instant.now();
+        Instant expiration = issuedAt.plus(securityProperties.getExpiry().getDuration(), securityProperties.getExpiry().getUnit());
+
+        AccessTokenPayload payload = new AccessTokenPayload(
                 member.getId(),
                 member.getRoles().stream().map(Enum::name).toList(),
                 member.getStatus().name(),
@@ -52,7 +83,7 @@ public class JwtService {
         ).subscribeOn(Schedulers.boundedElastic());
     }
 
-    public Mono<TokenPayload> parseToken(String token) {
+    public Mono<AccessTokenPayload> parseAccessToken(String token) {
         log.info(String.format("parsing token token for: %s", token));
         return Mono.fromCallable(() -> {
             Claims claims = Jwts.parserBuilder()
@@ -61,7 +92,7 @@ public class JwtService {
                     .parseClaimsJws(token)
                     .getBody();
 
-            return new TokenPayload(
+            return new AccessTokenPayload(
                     claims.getSubject(),
                     claims.get("roles", List.class),
                     claims.get("status", String.class),
@@ -71,23 +102,23 @@ public class JwtService {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    public Mono<TokenPayload> inspectToken(String token) {
-        return parseToken(token)
-                .map(tokenPayload -> {
-                    if (tokenPayload.getExpiration().isBefore(Instant.now())) {
+    public Mono<AccessTokenPayload> inspectAccessToken(String token) {
+        return parseAccessToken(token)
+                .map(accessTokenPayload -> {
+                    if (accessTokenPayload.getExpiration().isBefore(Instant.now())) {
                         log.warn("Token has expired");
                         throw new UnauthorizedException("Token has expired");
                     }
-                    if (tokenPayload.getRoles().stream().noneMatch(role -> role.equals(Member.Role.MEMBER.name()))) {
+                    if (accessTokenPayload.getRoles().stream().noneMatch(role -> role.equals(Member.Role.MEMBER.name()))) {
                         log.warn("Not a member");
                         throw new UnauthorizedException("Not a member");
                     }
 
-                    if (!tokenPayload.getStatus().equals(Member.Status.CONFIRMED.name())) {
+                    if (!accessTokenPayload.getStatus().equals(Member.Status.CONFIRMED.name())) {
                         log.warn("Member Not Confirmed Yet");
                         throw new UnauthorizedException("Member Not Confirmed Yet");
                     }
-                    return tokenPayload;
+                    return accessTokenPayload;
                 });
     }
 

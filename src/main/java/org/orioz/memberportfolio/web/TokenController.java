@@ -24,7 +24,7 @@ public class TokenController {
     }
     @PostMapping
     public Mono<ResponseEntity<TokenResponse>> issueToken(@Valid @RequestBody TokenRequest tokenRequest) {
-        return tokenService.issueToken(tokenRequest)
+        return tokenService.issueAccessToken(tokenRequest)
                 .map(memberResponse -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(memberResponse));

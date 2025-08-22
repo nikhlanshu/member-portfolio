@@ -25,7 +25,7 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
     @Override
     public Mono<Authentication> authenticate(Authentication authentication) {
         String token = authentication.getCredentials().toString();
-        return jwtService.inspectToken(token)
+        return jwtService.inspectAccessToken(token)
                 .map(payload -> {
                     log.info("Token has not expired. So Getting next set up validation");
                     List<GrantedAuthority> authorities = payload.getRoles().stream()

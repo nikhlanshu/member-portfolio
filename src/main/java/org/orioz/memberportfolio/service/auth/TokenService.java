@@ -28,7 +28,7 @@ public class TokenService {
         this.jwtService = jwtService;
     }
 
-    public Mono<TokenResponse> issueToken(TokenRequest tokenRequest) {
+    public Mono<TokenResponse> issueAccessToken(TokenRequest tokenRequest) {
         log.info("Issue Token is invoked");
         return memberRepository.findByEmail(tokenRequest.getUsername())
                 .switchIfEmpty(Mono.defer(() -> {
@@ -48,7 +48,7 @@ public class TokenService {
                     }
                     log.debug(String.format("Retrieved member is valid for userId : %s", tokenRequest.getUsername()));
 
-                    return jwtService.generateToken(memberDetails);
+                    return jwtService.generateAccessToken(memberDetails);
                 })
                 .map(TokenResponse::new);
     }

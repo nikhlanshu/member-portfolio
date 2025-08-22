@@ -38,7 +38,7 @@ public class EntitlementValidator {
                     log.debug("Authentication found: {}", auth.getName());
                     String token = (String) auth.getCredentials();
                     log.debug("JWT token extracted from authentication credentials");
-                    return jwtService.inspectToken(token)
+                    return jwtService.inspectAccessToken(token)
                             .doOnNext(tokenPayload -> log.debug("Token inspected successfully, subject: {}", tokenPayload.getSubject()));
                 })
                 .flatMap(tokenPayload ->
@@ -71,7 +71,7 @@ public class EntitlementValidator {
                     log.debug("Authentication found: {}", auth.getName());
                     String token = (String) auth.getCredentials();
                     log.debug("JWT token extracted from authentication credentials");
-                    return jwtService.inspectToken(token)
+                    return jwtService.inspectAccessToken(token)
                             .doOnNext(tokenPayload -> log.debug("Token inspected successfully, subject: {}", tokenPayload.getSubject()));
                 })
                 .flatMap(tokenPayload ->
@@ -98,7 +98,7 @@ public class EntitlementValidator {
                     log.debug("Authentication found: {}", auth.getName());
                     String token = (String) auth.getCredentials();
                     log.debug("JWT token extracted from authentication credentials");
-                    return jwtService.inspectToken(token)
+                    return jwtService.inspectAccessToken(token)
                             .doOnNext(tokenPayload -> log.debug("Token inspected successfully, subject: {}", tokenPayload.getSubject()));
                 })
                 .flatMap(tokenPayload ->
