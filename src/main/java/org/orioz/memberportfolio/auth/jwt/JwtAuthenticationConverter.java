@@ -1,4 +1,4 @@
-package org.orioz.memberportfolio.auth;
+package org.orioz.memberportfolio.auth.jwt;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

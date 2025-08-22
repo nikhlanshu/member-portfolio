@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,16 +40,8 @@ public class MemberPortfolioController {
                 .map(memberResponse -> ResponseEntity.status(HttpStatus.CREATED).body(memberResponse));
     }
     @GetMapping("/{email}")
-    @PreAuthorize("@entitlementValidator.validateEntitlement(#email)")
     public Mono<ResponseEntity<MemberResponse>> getMemberByEmail(@Email @PathVariable String email) {
         return memberService.getMemberByEmail(email)
                 .map(ResponseEntity::ok);
     }
-
-   /* @GetMapping("/{id}")
-    @PreAuthorize("@entitlementValidator.validateEntitlementById(#id)")
-    public Mono<ResponseEntity<MemberResponse>> getMemberById(@NotEmpty @PathVariable String id) {
-        return memberService.getMemberById(id)
-                .map(ResponseEntity::ok);
-    }*/
 }

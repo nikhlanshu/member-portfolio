@@ -1,7 +1,7 @@
 package org.orioz.memberportfolio.service.auth;
 
 import lombok.extern.slf4j.Slf4j;
-import org.orioz.memberportfolio.auth.JwtService;
+import org.orioz.memberportfolio.auth.jwt.JwtService;
 import org.orioz.memberportfolio.dtos.auth.TokenRequest;
 import org.orioz.memberportfolio.dtos.auth.TokenResponse;
 import org.orioz.memberportfolio.exceptions.InvalidCredentialException;

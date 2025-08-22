@@ -1,10 +1,11 @@
-package org.orioz.memberportfolio.auth;
+package org.orioz.memberportfolio.auth.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.orioz.memberportfolio.auth.properties.SecurityProperties;
 import org.orioz.memberportfolio.dtos.auth.AccessTokenPayload;
 import org.orioz.memberportfolio.dtos.auth.IDTokenPayload;
 import org.orioz.memberportfolio.exceptions.UnauthorizedException;

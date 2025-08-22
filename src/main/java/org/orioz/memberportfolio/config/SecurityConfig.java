@@ -1,6 +1,6 @@
 package org.orioz.memberportfolio.config;
 
-import org.orioz.memberportfolio.auth.JwtAuthenticationWebFilter;
+import org.orioz.memberportfolio.auth.jwt.JwtAuthenticationWebFilter;
 import org.orioz.memberportfolio.models.Member;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,5 +1,6 @@
-package org.orioz.memberportfolio.auth;
+package org.orioz.memberportfolio.auth.jwt;
 
+import org.orioz.memberportfolio.auth.properties.SecurityProperties;
 import org.orioz.memberportfolio.exceptions.UnauthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;

@@ -1,9 +1,11 @@
 package org.orioz.memberportfolio.service.admin;
 
 import lombok.extern.slf4j.Slf4j;
+import org.orioz.memberportfolio.auth.entitlement.EntitlementValidator;
 import org.orioz.memberportfolio.config.AdminConfig;
 import org.orioz.memberportfolio.dtos.admin.AdminCreationRequest;
 import org.orioz.memberportfolio.dtos.admin.PageResponse;
+import org.orioz.memberportfolio.dtos.auth.AdminVoidEntitlementCheckRequest;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
 import org.orioz.memberportfolio.exceptions.AlreadyHasAdminRoleException;
 import org.orioz.memberportfolio.exceptions.MaximumAdminThresholdException;
@@ -26,11 +28,13 @@ import java.util.stream.Collectors;
 public class AdminMemberService implements AdminService {
     private final MemberRepository memberRepository;
     private final AdminConfig adminConfig;
+    private final EntitlementValidator entitlementValidator;
 
     @Autowired
-    public AdminMemberService(MemberRepository memberRepository, AdminConfig adminConfig) {
+    public AdminMemberService(MemberRepository memberRepository, AdminConfig adminConfig, EntitlementValidator entitlementValidator) {
         this.memberRepository = memberRepository;
         this.adminConfig = adminConfig;
+        this.entitlementValidator = entitlementValidator;
     }
 
     public Mono<MemberResponse> addAdminRole(AdminCreationRequest adminCreationRequest) {
@@ -71,7 +75,8 @@ public class AdminMemberService implements AdminService {
     @Override
     public Mono<MemberResponse> confirmMember(String memberEmail) {
         log.info("Confirming member with ID={}", memberEmail);
-        return memberRepository.findByEmail(memberEmail)
+        return entitlementValidator.validate(new AdminVoidEntitlementCheckRequest())
+                .then(memberRepository.findByEmail(memberEmail))
                 .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + memberEmail)))
                 .flatMap(member -> {
                     log.debug("Member retrieved for confirmation: {}", member);
@@ -95,7 +100,8 @@ public class AdminMemberService implements AdminService {
     @Override
     public Mono<MemberResponse> rejectMember(String memberEmail) {
         log.info("Rejecting member with ID={}", memberEmail);
-        return memberRepository.findByEmail(memberEmail)
+        return entitlementValidator.validate(new AdminVoidEntitlementCheckRequest())
+                .then(memberRepository.findByEmail(memberEmail))
                 .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + memberEmail)))
                 .flatMap(member -> {
                     log.debug("Member retrieved for rejection: {}", member);
@@ -119,10 +125,8 @@ public class AdminMemberService implements AdminService {
     @Override
     public Mono<PageResponse<MemberResponse>> getMembersByStatus(Member.Status status, Pageable pageable) {
         log.info("Fetching members with status={} and pageable={}", status, pageable);
-        Mono<List<Member>> membersMono = memberRepository.findByStatus(status, pageable).collectList();
-        Mono<Long> countMono = memberRepository.countByStatus(status);
-
-        return Mono.zip(membersMono, countMono)
+        return entitlementValidator.validate(new AdminVoidEntitlementCheckRequest())
+                .then(Mono.zip(memberRepository.findByStatus(status, pageable).collectList(), memberRepository.countByStatus(status)))
                 .map(tuple -> {
                     List<Member> members = tuple.getT1();
                     Long totalCount = tuple.getT2();

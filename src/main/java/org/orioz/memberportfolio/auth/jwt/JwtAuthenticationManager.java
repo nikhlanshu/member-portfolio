@@ -1,4 +1,4 @@
-package org.orioz.memberportfolio.auth;
+package org.orioz.memberportfolio.auth.jwt;
 
 import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.exceptions.UnauthorizedException;

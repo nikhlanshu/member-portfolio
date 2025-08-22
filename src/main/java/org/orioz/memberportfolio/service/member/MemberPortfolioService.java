@@ -1,9 +1,12 @@
 package org.orioz.memberportfolio.service.member;
 
 import lombok.extern.slf4j.Slf4j;
+import org.orioz.memberportfolio.auth.entitlement.EntitlementValidator;
+import org.orioz.memberportfolio.dtos.auth.EmailEntitlementCheckRequest;
 import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
 import org.orioz.memberportfolio.exceptions.EmailAlreadyRegisteredException;
+import org.orioz.memberportfolio.exceptions.MemberNotFoundException;
 import org.orioz.memberportfolio.models.Member;
 import org.orioz.memberportfolio.repositories.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +20,13 @@ public class MemberPortfolioService implements MemberService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EntitlementValidator entitlementValidator;
 
     @Autowired
-    public MemberPortfolioService(MemberRepository memberRepository, PasswordEncoder passwordEncoder) {
+    public MemberPortfolioService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, EntitlementValidator entitlementValidator) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
+        this.entitlementValidator = entitlementValidator;
     }
 
     @Override
@@ -50,10 +55,16 @@ public class MemberPortfolioService implements MemberService {
     @Override
     public Mono<MemberResponse> getMemberByEmail(String email) {
         log.info("Fetching member by email: {}", email);
-        return memberRepository.findByEmail(email)
-                .doOnNext(member -> log.debug("Member found: {}", member))
-                .map(MemberResponse::fromMember);
+        return entitlementValidator.validate(new EmailEntitlementCheckRequest(email))
+                .then(memberRepository.findByEmail(email)
+                        .doOnNext(member -> log.debug("Member found: {}", member))
+                        .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found for email: " + email)))
+                        .map(MemberResponse::fromMember)
+                )
+                .doOnSuccess(response -> log.info("MemberResponse prepared for email: {}", email))
+                .doOnError(error -> log.warn("Failed to fetch member for email {}: {}", email, error.getMessage()));
     }
+
 
     @Override
     public Mono<MemberResponse> getMemberById(String id) {

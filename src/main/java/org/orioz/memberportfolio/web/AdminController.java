@@ -41,7 +41,6 @@ public class AdminController {
      * @return Mono of ResponseEntity with paginated MemberResponse for pending members.
      */
     @GetMapping(value = "/members/pending")
-    @PreAuthorize("@entitlementValidator.validateAdminEntitlement()")
     public Mono<ResponseEntity<PageResponse<MemberResponse>>> getPendingMembers(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
@@ -63,7 +62,6 @@ public class AdminController {
      * @param memberEmail               The ID of the member to approve.
      * @return Updated MemberResponse.
      */
-    @PreAuthorize("@entitlementValidator.validateAdminEntitlement()")
     @PatchMapping(value = "/members/{memberEmail}/confirm")
     public Mono<ResponseEntity<MemberResponse>> approveMember(@PathVariable String memberEmail) {
         return adminService.confirmMember(memberEmail)
@@ -76,10 +74,8 @@ public class AdminController {
      * @param memberEmail             The ID of the member to reject.
      * @return Updated MemberResponse.
      */
-    @PreAuthorize("@entitlementValidator.validateAdminEntitlement()")
     @PatchMapping(value = "/members/{memberEmail}/reject")
-    public Mono<ResponseEntity<MemberResponse>> rejectMember(
-            @PathVariable String memberEmail) {
+    public Mono<ResponseEntity<MemberResponse>> rejectMember( @PathVariable String memberEmail) {
         return adminService.rejectMember(memberEmail)
                 .map(ResponseEntity::ok);
     }
@@ -90,10 +86,8 @@ public class AdminController {
      * @param request AdminCreationRequest containing member ID.
      * @return Updated MemberResponse.
      */
-    @PreAuthorize("@entitlementValidator.validateAdminEntitlement()")
     @PatchMapping(value = "/add-admin")
-    public Mono<ResponseEntity<MemberResponse>> addAdmin(
-            @Valid @RequestBody AdminCreationRequest request) {
+    public Mono<ResponseEntity<MemberResponse>> addAdmin(@Valid @RequestBody AdminCreationRequest request) {
         return adminService.addAdminRole(request)
                 .map(memberResponse -> ResponseEntity.status(HttpStatus.OK).body(memberResponse));
     }

@@ -1,5 +1,6 @@
 package org.orioz.memberportfolio.exceptions.handler;
 
+import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.exceptions.AlreadyHasAdminRoleException;
 import org.orioz.memberportfolio.exceptions.EmailAlreadyRegisteredException;
 import org.orioz.memberportfolio.exceptions.ErrorResponse;
@@ -22,12 +23,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+@Slf4j
 @ControllerAdvice
 public class GlobalWebExceptionHandler {
 
     @ExceptionHandler(EmailAlreadyRegisteredException.class)
     public Mono<ResponseEntity<ErrorResponse>> emailAlreadyRegisteredException(
             EmailAlreadyRegisteredException ex, ServerWebExchange exchange) {
+        log.error("EmailAlreadyRegisteredException: {}", ex.getMessage(), ex);
         HttpStatus status = HttpStatus.CONFLICT; // 409 Conflict
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
@@ -37,10 +40,12 @@ public class GlobalWebExceptionHandler {
         );
         return Mono.just(ResponseEntity.status(status).body(errorResponse));
     }
+
     @ExceptionHandler(InvalidCredentialException.class)
     public Mono<ResponseEntity<ErrorResponse>> invalidCredentialException(
             InvalidCredentialException ex, ServerWebExchange exchange) {
-        HttpStatus status = HttpStatus.UNAUTHORIZED; // 409 Conflict
+        log.error("InvalidCredentialException: {}", ex.getMessage(), ex);
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
                 status.getReasonPhrase(),
@@ -53,7 +58,8 @@ public class GlobalWebExceptionHandler {
     @ExceptionHandler(UnauthorizedException.class)
     public Mono<ResponseEntity<ErrorResponse>> unauthorizedException(
             UnauthorizedException ex, ServerWebExchange exchange) {
-        HttpStatus status = HttpStatus.UNAUTHORIZED; // 409 Conflict
+        log.error("UnauthorizedException: {}", ex.getMessage(), ex);
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
                 status.getReasonPhrase(),
@@ -66,7 +72,8 @@ public class GlobalWebExceptionHandler {
     @ExceptionHandler(AlreadyHasAdminRoleException.class)
     public Mono<ResponseEntity<ErrorResponse>> alreadyHasAdminRoleException(
             AlreadyHasAdminRoleException ex, ServerWebExchange exchange) {
-        HttpStatus status = HttpStatus.CONFLICT; // 409 Conflict
+        log.error("AlreadyHasAdminRoleException: {}", ex.getMessage(), ex);
+        HttpStatus status = HttpStatus.CONFLICT;
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
                 status.getReasonPhrase(),
@@ -79,6 +86,7 @@ public class GlobalWebExceptionHandler {
     @ExceptionHandler(MaximumAdminThresholdException.class)
     public Mono<ResponseEntity<ErrorResponse>> maximumAdminThresholdException(
             MaximumAdminThresholdException ex, ServerWebExchange exchange) {
+        log.error("MaximumAdminThresholdException: {}", ex.getMessage(), ex);
         HttpStatus status = HttpStatus.FORBIDDEN;
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
@@ -92,8 +100,8 @@ public class GlobalWebExceptionHandler {
     @ExceptionHandler(DataAccessException.class)
     public Mono<ResponseEntity<ErrorResponse>> dataAccessException(
             DataAccessException ex, ServerWebExchange exchange) {
-
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR; // 409 Conflict
+        log.error("DataAccessException: {}", ex.getMessage(), ex);
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
                 status.getReasonPhrase(),
@@ -106,7 +114,8 @@ public class GlobalWebExceptionHandler {
     @ExceptionHandler(MemberNotFoundException.class)
     public Mono<ResponseEntity<ErrorResponse>> handleMemberNotFoundException(
             MemberNotFoundException ex, ServerWebExchange exchange) {
-        HttpStatus status = HttpStatus.NOT_FOUND; // 404 Not Found
+        log.error("MemberNotFoundException: {}", ex.getMessage(), ex);
+        HttpStatus status = HttpStatus.NOT_FOUND;
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
                 status.getReasonPhrase(),
@@ -119,6 +128,7 @@ public class GlobalWebExceptionHandler {
     @ExceptionHandler(MemberNotInPendingStatusException.class)
     public Mono<ResponseEntity<ErrorResponse>> memberNotInPendingStatusException(
             MemberNotInPendingStatusException ex, ServerWebExchange exchange) {
+        log.error("MemberNotInPendingStatusException: {}", ex.getMessage(), ex);
         HttpStatus status = HttpStatus.CONFLICT;
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
@@ -129,27 +139,24 @@ public class GlobalWebExceptionHandler {
         return Mono.just(ResponseEntity.status(status).body(errorResponse));
     }
 
-    // --- Validation Exceptions (e.g., @NotBlank, @Email in DTOs) ---
-    // This handles errors from @Valid annotation if DTO fields are invalid
     @ExceptionHandler(WebExchangeBindException.class)
     public Mono<ResponseEntity<Map<String, String>>> handleValidationExceptions(
             WebExchangeBindException ex, ServerWebExchange exchange) {
+        log.error("Validation exception: {}", ex.getMessage(), ex);
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> {
             String fieldName = error.getField();
             String errorMessage = Objects.requireNonNull(error.getDefaultMessage());
             errors.put(fieldName, errorMessage);
         });
-        // You could also return ErrorResponse for validation, depending on desired format
-        return Mono.just(ResponseEntity.badRequest().body(errors)); // 400 Bad Request
+        return Mono.just(ResponseEntity.badRequest().body(errors));
     }
 
-    // --- Common Input Errors (e.g., malformed JSON, type mismatch in request body) ---
     @ExceptionHandler(ServerWebInputException.class)
     public Mono<ResponseEntity<ErrorResponse>> handleServerWebInputException(
-            ServerWebInputException ex, org.springframework.web.server.ServerWebExchange exchange) {
-        HttpStatus status = HttpStatus.BAD_REQUEST; // 400 Bad Request
-        ex.getReason();
+            ServerWebInputException ex, ServerWebExchange exchange) {
+        log.error("ServerWebInputException: {}", ex.getMessage(), ex);
+        HttpStatus status = HttpStatus.BAD_REQUEST;
         String message = ex.getReason();
         if (ex.getCause() != null && ex.getCause().getMessage() != null) {
             message += " Cause: " + ex.getCause().getMessage();
@@ -163,16 +170,15 @@ public class GlobalWebExceptionHandler {
         return Mono.just(ResponseEntity.status(status).body(errorResponse));
     }
 
-    // --- Generic Catch-All Exception ---
-    // This is a fallback for any unhandled RuntimeException
     @ExceptionHandler(RuntimeException.class)
     public Mono<ResponseEntity<ErrorResponse>> handleGenericRuntimeException(
-            RuntimeException ex, org.springframework.web.server.ServerWebExchange exchange) {
+            RuntimeException ex, ServerWebExchange exchange) {
+        log.error("RuntimeException: {}", ex.getMessage(), ex);
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
                 status.getReasonPhrase(),
-                "An unexpected error occurred. Please try again later.", // Generic message for client
+                ex.getMessage(),
                 exchange.getRequest().getPath().toString()
         );
         return Mono.just(ResponseEntity.status(status).body(errorResponse));
