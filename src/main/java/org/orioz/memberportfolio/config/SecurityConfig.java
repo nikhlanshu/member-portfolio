@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .cors(customizer -> {})
                 .authorizeExchange(exchange -> exchange
-                        .pathMatchers("/api/v1/members/register", "api/v1/members/auth/login", "/api/v1/token").permitAll()
+                        .pathMatchers("/api/v1/members/register", "api/v1/members/auth/login", "/api/v1/token", "/api/v1/token/refresh").permitAll()
                         .pathMatchers("/api/v1/admin/**").hasAuthority(Member.Role.ADMIN.name())
                         .pathMatchers("/api/v1/members/**").hasAuthority(Member.Role.MEMBER.name())
                         .anyExchange().authenticated()
@@ -43,7 +43,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(List.of("*"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

@@ -2,6 +2,7 @@ package org.orioz.memberportfolio.service.auth;
 
 import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.auth.jwt.JwtService;
+import org.orioz.memberportfolio.dtos.auth.OnBehalfOfTokenRequest;
 import org.orioz.memberportfolio.dtos.auth.TokenRequest;
 import org.orioz.memberportfolio.dtos.auth.TokenResponse;
 import org.orioz.memberportfolio.exceptions.InvalidCredentialException;
@@ -50,6 +51,17 @@ public class TokenService {
 
                     return jwtService.generateAccessToken(memberDetails);
                 })
+                .map(TokenResponse::new);
+    }
+
+    public Mono<TokenResponse> refreshToken(OnBehalfOfTokenRequest request) {
+        return jwtService.parseAccessTokenAllowExpired(request.getToken()) // 👈 need to allow parsing expired
+                .flatMap(token -> memberRepository.findById(token.getSubject()))
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.debug("No member found for userId");
+                    return Mono.error(new MemberNotFoundException("Member not found"));
+                }))
+                .flatMap(jwtService::generateAccessToken)
                 .map(TokenResponse::new);
     }
 }

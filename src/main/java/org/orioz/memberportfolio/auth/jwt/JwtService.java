@@ -1,6 +1,8 @@
 package org.orioz.memberportfolio.auth.jwt;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -123,4 +125,31 @@ public class JwtService {
                 });
     }
 
+    public Mono<AccessTokenPayload> parseAccessTokenAllowExpired(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            return Mono.just(toAccessTokenPayload(claims));
+        } catch (ExpiredJwtException ex) {
+            // Token expired but claims are still valid
+            log.warn("Access token expired, but claims recovered for refresh");
+            return Mono.just(toAccessTokenPayload(ex.getClaims()));
+        } catch (JwtException ex) {
+            log.error("Invalid token", ex);
+            return Mono.error(new UnauthorizedException("Invalid token"));
+        }
+    }
+    private AccessTokenPayload toAccessTokenPayload(Claims claims) {
+        return new AccessTokenPayload(
+                claims.getSubject(),
+                claims.get("roles", List.class),
+                claims.get("status", String.class),
+                claims.getIssuedAt().toInstant(),
+                claims.getExpiration().toInstant()
+        );
+    }
 }
