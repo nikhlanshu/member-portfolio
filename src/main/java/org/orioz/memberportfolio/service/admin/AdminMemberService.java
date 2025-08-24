@@ -82,6 +82,7 @@ public class AdminMemberService implements AdminService {
                     log.debug("Member retrieved for confirmation: {}", member);
                     if (member.getStatus() == Member.Status.PENDING) {
                         member.setStatus(Member.Status.CONFIRMED);
+                        member.setMemberSince(LocalDateTime.now());
                         member.setUpdatedAt(LocalDateTime.now());
                         log.info("Member {} confirmed", memberEmail);
                         return memberRepository.save(member)

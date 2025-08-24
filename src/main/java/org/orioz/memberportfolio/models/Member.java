@@ -158,7 +158,6 @@ public class Member {
         // Set default values for fields not provided in registration request
         member.setId(UUID.randomUUID().toString());
         member.setLifetimeMember(false); // New members are not lifetime members by default
-        member.setMemberSince(LocalDateTime.now()); // Set registration timestamp
         member.setLastLogin(null); // No login yet
         member.setRoles(Collections.singletonList(Role.MEMBER)); // Assign default role
         member.setRegisteredEvents(new ArrayList<>()); // No events registered yet
