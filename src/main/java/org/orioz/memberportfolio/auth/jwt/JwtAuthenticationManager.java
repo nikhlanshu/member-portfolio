@@ -1,14 +1,15 @@
 package org.orioz.memberportfolio.auth.jwt;
 
 import lombok.extern.slf4j.Slf4j;
-import org.orioz.memberportfolio.exceptions.UnauthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -34,9 +35,9 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
                     log.debug("Listed Authorities: "+authorities);
                     return (Authentication) new UsernamePasswordAuthenticationToken(payload.getSubject(), token, authorities);
                 })
-                .onErrorResume(e -> {
-                    log.error("Error occurred "+e.getMessage());
-                    return Mono.error(new UnauthorizedException(e.getMessage()));
+                .onErrorResume(error -> {
+                    log.error("Authorization error {}", error.getMessage(), error);
+                    return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, error.getMessage(), error));
                 });
     }
 }

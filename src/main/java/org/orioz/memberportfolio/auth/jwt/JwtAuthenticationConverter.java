@@ -1,5 +1,6 @@
 package org.orioz.memberportfolio.auth.jwt;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 public class JwtAuthenticationConverter implements ServerAuthenticationConverter {
     private static final String BEARER_PREFIX = "Bearer ";
