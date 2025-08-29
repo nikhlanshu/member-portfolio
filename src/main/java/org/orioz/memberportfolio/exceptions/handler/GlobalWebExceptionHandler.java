@@ -15,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.support.WebExchangeBindException;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
@@ -166,20 +165,6 @@ public class GlobalWebExceptionHandler {
                 status.value(),
                 status.getReasonPhrase(),
                 message,
-                exchange.getRequest().getPath().toString()
-        );
-        return Mono.just(ResponseEntity.status(status).body(errorResponse));
-    }
-
-    @ExceptionHandler(ResponseStatusException.class)
-    public Mono<ResponseEntity<ErrorResponse>> responseStatusException(
-            ResponseStatusException ex, ServerWebExchange exchange) {
-        log.error("ResponseStatusException: {}", ex.getMessage());
-        HttpStatus status = HttpStatus.UNAUTHORIZED;
-        ErrorResponse errorResponse = new ErrorResponse(
-                status.value(),
-                status.getReasonPhrase(),
-                ex.getMessage(),
                 exchange.getRequest().getPath().toString()
         );
         return Mono.just(ResponseEntity.status(status).body(errorResponse));

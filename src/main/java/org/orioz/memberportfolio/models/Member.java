@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
+import org.orioz.memberportfolio.dtos.member.UpdateMemberRequest;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -16,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 // @Document annotation tells Spring Data MongoDB to map this class to a MongoDB collection.
 // The 'collection' attribute specifies the name of the collection (defaults to class name lowercase if not specified).
@@ -179,5 +181,52 @@ public class Member {
         }
         return email.substring(0, atIndex).trim().toLowerCase();
     }
+    public static Member updateMember(UpdateMemberRequest source, Member destination) {
+        // Convert existing addresses and contacts to maps for easy lookup
+        Map<String, Member.AddressInfo> addressMap = destination.getAddresses().stream()
+                .collect(Collectors.toMap(addr -> addr.getType().toUpperCase(), addr -> addr));
 
+        Map<String, Member.ContactInfo> contactMap = destination.getContacts().stream()
+                .collect(Collectors.toMap(c -> c.getType().toUpperCase(), c -> c));
+
+        // Update addresses
+        if (source.getAddresses() != null) {
+            for (Member.AddressInfo incoming : source.getAddresses()) {
+                String typeKey = incoming.getType().toUpperCase();
+                Member.AddressInfo existing = addressMap.get(typeKey);
+                if (existing != null) {
+                    updateAddressFields(existing, incoming);
+                } else {
+                    destination.getAddresses().add(incoming);
+                    addressMap.put(typeKey, incoming);
+                }
+            }
+        }
+
+        // Update contacts
+        if (source.getContacts() != null) {
+            for (Member.ContactInfo incoming : source.getContacts()) {
+                String typeKey = incoming.getType().toUpperCase();
+                Member.ContactInfo existing = contactMap.get(typeKey);
+                if (existing != null) {
+                    existing.setValue(incoming.getValue());
+                    existing.setPrimary(incoming.isPrimary());
+                } else {
+                    destination.getContacts().add(incoming);
+                    contactMap.put(typeKey, incoming);
+                }
+            }
+        }
+
+        return destination;
+    }
+    private static void updateAddressFields(Member.AddressInfo existing, Member.AddressInfo incoming) {
+        existing.setStreet(incoming.getStreet());
+        existing.setSuburb(incoming.getSuburb());
+        existing.setCity(incoming.getCity());
+        existing.setState(incoming.getState());
+        existing.setPostCode(incoming.getPostCode());
+        existing.setCountry(incoming.getCountry());
+        existing.setPrimary(incoming.isPrimary());
+    }
 }

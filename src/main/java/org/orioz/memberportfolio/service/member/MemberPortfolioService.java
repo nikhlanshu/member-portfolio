@@ -5,6 +5,7 @@ import org.orioz.memberportfolio.auth.entitlement.EntitlementValidator;
 import org.orioz.memberportfolio.dtos.auth.EmailEntitlementCheckRequest;
 import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
+import org.orioz.memberportfolio.dtos.member.UpdateMemberRequest;
 import org.orioz.memberportfolio.exceptions.EmailAlreadyRegisteredException;
 import org.orioz.memberportfolio.exceptions.MemberNotFoundException;
 import org.orioz.memberportfolio.models.Member;
@@ -32,7 +33,6 @@ public class MemberPortfolioService implements MemberService {
     @Override
     public Mono<MemberResponse> registerMember(MemberRegistrationRequest request) {
         log.info("Attempting to register member with email: {}", request.getEmail());
-
         return memberRepository.findByEmail(request.getEmail())
                 .flatMap(existingMember -> {
                     log.debug("Email {} already exists in DB with memberId: {}", request.getEmail(), existingMember.getId());
@@ -71,6 +71,24 @@ public class MemberPortfolioService implements MemberService {
         log.info("Fetching member by ID: {}", id);
         return memberRepository.findById(id)
                 .doOnNext(member -> log.debug("Member found: {}", member))
-                .map(MemberResponse::fromMember);
+                .map(MemberResponse::fromMember)
+                .onErrorResume(error -> {
+                    log.error("Unknown error has occurred {} ", error.getMessage());
+                    return Mono.error(new RuntimeException(error.getMessage()));
+                });
+    }
+
+    @Override
+    public Mono<MemberResponse> updateMemberByEmail(String email, UpdateMemberRequest updateMemberRequest) {
+        return memberRepository.findByEmail(email)
+                .flatMap(member -> memberRepository.save(Member.updateMember(updateMemberRequest, member)))
+                .map(member -> {
+                    log.info("Member registered successfully: {}", member.getEmail());
+                    return MemberResponse.fromMember(member);
+                })
+                .onErrorResume(error -> {
+                    log.error("Unknown error has occurred {} ", error.getMessage());
+                    return Mono.error(new RuntimeException(error.getMessage()));
+                });
     }
 }

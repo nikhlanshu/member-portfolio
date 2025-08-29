@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
+import org.orioz.memberportfolio.dtos.member.UpdateMemberRequest;
 import org.orioz.memberportfolio.service.member.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,5 +45,11 @@ public class MemberPortfolioController {
     public Mono<ResponseEntity<MemberResponse>> getMemberByEmail(@Email @PathVariable String email) {
         return memberService.getMemberByEmail(email)
                 .map(ResponseEntity::ok);
+    }
+
+    @PutMapping("/{email}")
+    public Mono<ResponseEntity<MemberResponse>> updateMemberByEmail(@Email @PathVariable String email, @RequestBody UpdateMemberRequest updateMemberRequest) {
+        return memberService.updateMemberByEmail(email, updateMemberRequest)
+                .map(memberResponse -> ResponseEntity.status(HttpStatus.CREATED).body(memberResponse));
     }
 }

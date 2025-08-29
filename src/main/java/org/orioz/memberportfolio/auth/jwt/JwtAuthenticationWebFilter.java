@@ -2,7 +2,6 @@ package org.orioz.memberportfolio.auth.jwt;
 
 import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.auth.properties.SecurityProperties;
-import org.orioz.memberportfolio.exceptions.UnauthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -41,10 +40,10 @@ public class JwtAuthenticationWebFilter implements WebFilter {
         }
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || authHeader.trim().isEmpty()) {
-            return Mono.error(new UnauthorizedException("Missing or empty Authorization header"));
+            return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or empty Authorization header"));
         }
         if (!authHeader.startsWith(BEARER_PREFIX)) {
-            return Mono.error(new UnauthorizedException("Not a Bearer Authorization header"));
+            return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not a Bearer Authorization header"));
         }
         String authToken = authHeader.substring(BEARER_PREFIX.length());
         Authentication auth = new UsernamePasswordAuthenticationToken(null, authToken);
