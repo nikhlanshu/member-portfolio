@@ -2,6 +2,9 @@ package org.orioz.memberportfolio.service.member;
 
 import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.auth.entitlement.EntitlementValidator;
+import org.orioz.memberportfolio.auth.properties.SendCommunication;
+import org.orioz.memberportfolio.comm.dto.CommunicationStage;
+import org.orioz.memberportfolio.comm.dto.TemplateProvider;
 import org.orioz.memberportfolio.dtos.auth.EmailEntitlementCheckRequest;
 import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
@@ -10,10 +13,13 @@ import org.orioz.memberportfolio.exceptions.EmailAlreadyRegisteredException;
 import org.orioz.memberportfolio.exceptions.MemberNotFoundException;
 import org.orioz.memberportfolio.models.Member;
 import org.orioz.memberportfolio.repositories.MemberRepository;
+import org.orioz.memberportfolio.repositories.SendCommunicationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -22,12 +28,16 @@ public class MemberPortfolioService implements MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final EntitlementValidator entitlementValidator;
+    private final SendCommunicationRepository sendCommunicationRepository;
+    private final SendCommunication sendCommunication;
 
     @Autowired
-    public MemberPortfolioService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, EntitlementValidator entitlementValidator) {
+    public MemberPortfolioService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, EntitlementValidator entitlementValidator, SendCommunicationRepository sendCommunicationRepository, SendCommunication sendCommunication) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
         this.entitlementValidator = entitlementValidator;
+        this.sendCommunicationRepository = sendCommunicationRepository;
+        this.sendCommunication = sendCommunication;
     }
 
     @Override
@@ -48,6 +58,14 @@ public class MemberPortfolioService implements MemberService {
                 .cast(Member.class)
                 .map(member -> {
                     log.info("Member registered successfully: {}", member.getEmail());
+                    TemplateProvider templateProvider = TemplateProvider.builder()
+                            .toEmail(member.getEmail())
+                            .smtpConfig(sendCommunication.getFrom().get("GMAIL")) // pick SMTP provider
+                            .template(sendCommunication.getTemplates().get(CommunicationStage.REGISTRATION.name()))
+                            .variables(Map.of("username", member.getFirstName()))
+                            .build();
+                    sendCommunicationRepository.sendEmail(templateProvider)
+                            .subscribe();
                     return MemberResponse.fromMember(member);
                 });
     }

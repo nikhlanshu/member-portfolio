@@ -2,6 +2,9 @@ package org.orioz.memberportfolio.service.admin;
 
 import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.auth.entitlement.EntitlementValidator;
+import org.orioz.memberportfolio.auth.properties.SendCommunication;
+import org.orioz.memberportfolio.comm.dto.CommunicationStage;
+import org.orioz.memberportfolio.comm.dto.TemplateProvider;
 import org.orioz.memberportfolio.config.AdminConfig;
 import org.orioz.memberportfolio.dtos.admin.AdminCreationRequest;
 import org.orioz.memberportfolio.dtos.admin.PageResponse;
@@ -13,6 +16,7 @@ import org.orioz.memberportfolio.exceptions.MemberNotFoundException;
 import org.orioz.memberportfolio.exceptions.MemberNotInPendingStatusException;
 import org.orioz.memberportfolio.models.Member;
 import org.orioz.memberportfolio.repositories.MemberRepository;
+import org.orioz.memberportfolio.repositories.SendCommunicationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +25,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,11 +35,17 @@ public class AdminMemberService implements AdminService {
     private final AdminConfig adminConfig;
     private final EntitlementValidator entitlementValidator;
 
+    private final SendCommunication sendCommunication;
+
+    private final SendCommunicationRepository sendCommunicationRepository;
+
     @Autowired
-    public AdminMemberService(MemberRepository memberRepository, AdminConfig adminConfig, EntitlementValidator entitlementValidator) {
+    public AdminMemberService(MemberRepository memberRepository, AdminConfig adminConfig, EntitlementValidator entitlementValidator, SendCommunication sendCommunication, SendCommunicationRepository sendCommunicationRepository) {
         this.memberRepository = memberRepository;
         this.adminConfig = adminConfig;
         this.entitlementValidator = entitlementValidator;
+        this.sendCommunication = sendCommunication;
+        this.sendCommunicationRepository = sendCommunicationRepository;
     }
 
     public Mono<MemberResponse> addAdminRole(AdminCreationRequest adminCreationRequest) {
@@ -87,7 +98,18 @@ public class AdminMemberService implements AdminService {
                         log.info("Member {} confirmed", memberEmail);
                         return memberRepository.save(member)
                                 .doOnSuccess(saved -> log.debug("Member saved after confirmation: {}", saved))
-                                .map(MemberResponse::fromMember);
+                                .map(MemberResponse::fromMember)
+                                .doOnSuccess(memberResponse -> {
+                                    log.info("Member Approved successfully: {}", member.getEmail());
+                                    TemplateProvider templateProvider = TemplateProvider.builder()
+                                            .toEmail(member.getEmail())
+                                            .smtpConfig(sendCommunication.getFrom().get("GMAIL"))
+                                            .template(sendCommunication.getTemplates().get(CommunicationStage.APPROVAL.name()))
+                                            .variables(Map.of("username", member.getFirstName()))
+                                            .build();
+                                    sendCommunicationRepository.sendEmail(templateProvider)
+                                            .subscribe();
+                                });
                     } else {
                         log.warn("Cannot confirm member {} as status is not PENDING (current status: {})",
                                 member.getId(), member.getStatus());
@@ -112,7 +134,18 @@ public class AdminMemberService implements AdminService {
                         log.info("Member {} rejected", memberEmail);
                         return memberRepository.save(member)
                                 .doOnSuccess(saved -> log.debug("Member saved after rejection: {}", saved))
-                                .map(MemberResponse::fromMember);
+                                .map(MemberResponse::fromMember)
+                                .doOnSuccess(memberResponse -> {
+                                    log.info("Member Rejected: {}", member.getEmail());
+                                    TemplateProvider templateProvider = TemplateProvider.builder()
+                                            .toEmail(member.getEmail())
+                                            .smtpConfig(sendCommunication.getFrom().get("GMAIL"))
+                                            .template(sendCommunication.getTemplates().get(CommunicationStage.REJECTION.name()))
+                                            .variables(Map.of("username", member.getFirstName()))
+                                            .build();
+                                    sendCommunicationRepository.sendEmail(templateProvider)
+                                            .subscribe();
+                                });
                     } else {
                         log.warn("Cannot reject member {} as status is not PENDING (current status: {})",
                                 member.getId(), member.getStatus());
