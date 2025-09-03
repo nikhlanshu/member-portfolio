@@ -31,4 +31,7 @@ public interface MemberRepository extends ReactiveMongoRepository<Member, String
     Mono<Long> countByStatus(Member.Status status);
 
     Mono<Member> findByUserId(String userId);
+
+    Flux<Member> findByLastName(String lastName);
+    Flux<Member> findByFirstNameAndLastName(String firstName, String lastName);
 }

@@ -1,12 +1,11 @@
 package org.orioz.memberportfolio.dtos.member;
 
-import org.orioz.memberportfolio.models.Member;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import org.orioz.memberportfolio.models.Member;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -23,8 +22,8 @@ public class MemberResponse {
     private List<Member.ContactInfo> contacts;
     private String occupation;
     private String profilePictureUrl;
-    private boolean isLifetimeMember;
-    private LocalDateTime memberSince;
+    private boolean isMember;
+    private LocalDate memberSince;
     private List<Member.Role> roles;
     private Member.Status status;
     public static MemberResponse fromMember(Member member) {
@@ -39,10 +38,12 @@ public class MemberResponse {
         response.setContacts(member.getContacts());
         response.setOccupation(member.getOccupation());
         response.setProfilePictureUrl(member.getProfilePictureUrl());
-        response.setLifetimeMember(member.isLifetimeMember());
-        response.setMemberSince(member.getMemberSince());
         response.setRoles(member.getRoles());
         response.setStatus(member.getStatus());
+        if(member.getMembershipDetails() != null && member.getMembershipDetails().getDuration().equals(Member.MembershipDuration.NONE)) {
+            response.isMember = true;
+            response.memberSince = member.getMembershipDetails().getStartDate();
+        }
         return response;
     }
 }

@@ -2,6 +2,7 @@ package org.orioz.memberportfolio.exceptions.handler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.exceptions.AlreadyHasAdminRoleException;
+import org.orioz.memberportfolio.exceptions.BadRequestException;
 import org.orioz.memberportfolio.exceptions.EmailAlreadyRegisteredException;
 import org.orioz.memberportfolio.exceptions.ErrorResponse;
 import org.orioz.memberportfolio.exceptions.InvalidCredentialException;
@@ -130,6 +131,20 @@ public class GlobalWebExceptionHandler {
             MemberNotInPendingStatusException ex, ServerWebExchange exchange) {
         log.error("MemberNotInPendingStatusException: {}", ex.getMessage(), ex);
         HttpStatus status = HttpStatus.CONFLICT;
+        ErrorResponse errorResponse = new ErrorResponse(
+                status.value(),
+                status.getReasonPhrase(),
+                ex.getMessage(),
+                exchange.getRequest().getPath().toString()
+        );
+        return Mono.just(ResponseEntity.status(status).body(errorResponse));
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public Mono<ResponseEntity<ErrorResponse>> badRequestException(
+            BadRequestException ex, ServerWebExchange exchange) {
+        log.error("BadRequestException: {}", ex.getMessage(), ex);
+        HttpStatus status = HttpStatus.BAD_REQUEST;
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
                 status.getReasonPhrase(),

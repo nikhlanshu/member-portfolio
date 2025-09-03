@@ -2,6 +2,7 @@ package org.orioz.memberportfolio.web;
 
 import jakarta.validation.Valid;
 import org.orioz.memberportfolio.dtos.admin.AdminCreationRequest;
+import org.orioz.memberportfolio.dtos.admin.MembershipUpdateRequest;
 import org.orioz.memberportfolio.dtos.admin.PageResponse;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
 import org.orioz.memberportfolio.models.Member;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Validated
@@ -90,5 +92,30 @@ public class AdminController {
     public Mono<ResponseEntity<MemberResponse>> addAdmin(@Valid @RequestBody AdminCreationRequest request) {
         return adminService.addAdminRole(request)
                 .map(memberResponse -> ResponseEntity.status(HttpStatus.OK).body(memberResponse));
+    }
+
+    /**
+     * Endpoint to update membership details for a member.
+     * Accessible only by administrators.
+     *
+     * @param memberEmail The email of the member whose membership will be updated
+     * @param request MembershipUpdateRequest containing duration, start date, and amount
+     * @return Updated MemberResponse with the new membership details
+     */
+    @PatchMapping("/members/{memberEmail}/membership")
+    public Mono<ResponseEntity<MemberResponse>> updateMembership(
+            @PathVariable String memberEmail,
+            @Valid @RequestBody MembershipUpdateRequest request) {
+        return adminService.updateMembershipForMember(memberEmail, request)
+                .map(memberResponse -> ResponseEntity.ok().body(memberResponse));
+    }
+
+    @GetMapping("members/search")
+    public Flux<MemberResponse> searchMember(
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String firstName,
+            @RequestParam(required = false) String lastName) {
+
+        return adminService.searchMembers(email, firstName, lastName);
     }
 }

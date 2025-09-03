@@ -5,11 +5,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
 import org.orioz.memberportfolio.dtos.member.UpdateMemberRequest;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -19,16 +22,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-// @Document annotation tells Spring Data MongoDB to map this class to a MongoDB collection.
-// The 'collection' attribute specifies the name of the collection (defaults to class name lowercase if not specified).
 @Document(collection = "members")
-@Data // Lombok: Generates getters, setters, toString, equals, and hashCode methods
-@NoArgsConstructor // Lombok: Generates a no-argument constructor
-@AllArgsConstructor // Lombok: Generates a constructor with all arguments
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Member {
-
-    // @Id annotation marks this field as the primary identifier for the MongoDB document.
-    // Spring Data MongoDB will automatically handle its generation (ObjectId) if not set.
     @Id
     private String id;
 
@@ -37,13 +35,9 @@ public class Member {
     private String firstName;
     private String lastName;
 
-    // @Indexed(unique = true) creates a unique index on the 'email' field in MongoDB,
-    // ensuring no two members can have the same email address.
     @Indexed(unique = true)
     private String email;
 
-    // IMPORTANT: In a real application, this password MUST be hashed before saving.
-    // It should NEVER be stored in plain text.
     private String password;
 
     private LocalDate dateOfBirth;
@@ -58,15 +52,12 @@ public class Member {
     private String occupation;
     private String profilePictureUrl;
 
-    // Boolean field to indicate lifetime membership status
-    private boolean isLifetimeMember = false; // Default value
-
     // Embedded document for lifetime membership details.
     // This will be stored as a sub-document directly within the Member document if not null.
     private MembershipDetails membershipDetails;
 
     // Timestamp when the member registered, typically set by the application.
-    private LocalDateTime memberSince = LocalDateTime.now(); // Default value
+    private LocalDate registeredSince; // when the member is confirmed
 
     private LocalDateTime lastLogin; // Last login timestamp
 
@@ -81,18 +72,17 @@ public class Member {
 
     private Status status;
 
+    @CreatedDate
     private LocalDateTime createdAt;
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    // --- Nested Embedded Document Classes ---
 
-    // These static nested classes define the structure of sub-documents embedded
-    // within the main Member document. They do NOT get their own separate collections.
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AddressInfo {
-        private String type; // e.g., "LOCAL", "OVERSEAS", "MAILING"
+        private String type;
         private String street;
         private String suburb;
         private String city;
@@ -116,10 +106,16 @@ public class Member {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MembershipDetails {
-        private String paymentTransactionId;
-        private LocalDateTime paymentDate;
-        private double amountPaid;
-        private String currency;
+        private MembershipDuration duration;
+        private LocalDate startDate;
+        private Double amount;
+    }
+
+    public enum MembershipDuration {
+        YEARLY,
+        MONTHLY,
+        LIFETIME,
+        NONE
     }
 
     @Data
@@ -159,15 +155,12 @@ public class Member {
         member.setProfilePictureUrl(request.getProfilePictureUrl());
         // Set default values for fields not provided in registration request
         member.setId(UUID.randomUUID().toString());
-        member.setLifetimeMember(false); // New members are not lifetime members by default
         member.setLastLogin(null); // No login yet
         member.setRoles(Collections.singletonList(Role.MEMBER)); // Assign default role
         member.setRegisteredEvents(new ArrayList<>()); // No events registered yet
         member.setPreferences(Collections.emptyMap()); // No preferences set yet
         member.setMembershipDetails(null); // Not a lifetime member yet
         member.setStatus(Status.PENDING); // when registered the status will be always pending.
-        member.setCreatedAt(LocalDateTime.now());
-        member.setUpdatedAt(LocalDateTime.now());
         return member;
     }
 
