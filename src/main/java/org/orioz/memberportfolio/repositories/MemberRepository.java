@@ -2,6 +2,7 @@ package org.orioz.memberportfolio.repositories;
 
 import org.orioz.memberportfolio.models.Member;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -9,11 +10,8 @@ import reactor.core.publisher.Mono;
 // ReactiveMongoRepository provides reactive CRUD operations for Member documents
 public interface MemberRepository extends ReactiveMongoRepository<Member, String> {
 
-    // Custom query method: Find a member by email. Mono<Member> means it might return 0 or 1 Member reactively.
+    @Query("{ 'email': { $regex: '^?0$', $options: 'i' } }")
     Mono<Member> findByEmail(String email);
-
-    // Custom query method: Check if a member with a given email exists.
-    Mono<Boolean> existsByEmail(String email);
 
     // Find members whose roles list contains a specific role (e.g., "ADMIN")
     Flux<Member> findByRolesContaining(Member.Role role);
@@ -30,8 +28,8 @@ public interface MemberRepository extends ReactiveMongoRepository<Member, String
      */
     Mono<Long> countByStatus(Member.Status status);
 
-    Mono<Member> findByUserId(String userId);
-
+    @Query("{ 'lastName': { $regex: ?0, $options: 'i' } }")
     Flux<Member> findByLastName(String lastName);
+    @Query("{ 'firstName': { $regex: ?0, $options: 'i' }, 'lastName': { $regex: ?1, $options: 'i' } }")
     Flux<Member> findByFirstNameAndLastName(String firstName, String lastName);
 }

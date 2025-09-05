@@ -53,14 +53,14 @@ public class AdminMemberService implements AdminService {
 
     @Override
     public Mono<MemberResponse> addAdminRole(AdminCreationRequest adminCreationRequest) {
-        String memberId = adminCreationRequest.getMemberId();
-        log.info("Attempting to add ADMIN role to memberId={}", memberId);
+        String emailId = adminCreationRequest.getEmail();
+        log.info("Attempting to add ADMIN role to emailId={}", emailId);
 
-        return memberRepository.findById(memberId)
-                .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + memberId)))
+        return memberRepository.findByEmail(emailId)
+                .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + emailId)))
                 .filter(member -> member.getRoles() == null || !member.getRoles().contains(Member.Role.ADMIN))
                 .switchIfEmpty(Mono.defer(() -> {
-                    log.warn("Member {} already has ADMIN role", memberId);
+                    log.warn("Member {} already has ADMIN role", emailId);
                     return Mono.error(new AlreadyHasAdminRoleException("Member already has ADMIN role."));
                 }))
                 .flatMap(member -> memberRepository.findByRolesContaining(Member.Role.ADMIN).count()
@@ -73,7 +73,7 @@ public class AdminMemberService implements AdminService {
                 )
                 .flatMap(member -> {
                     member.getRoles().add(Member.Role.ADMIN);
-                    log.info("Assigning ADMIN role to member {}", memberId);
+                    log.info("Assigning ADMIN role to member {}", emailId);
                     return memberRepository.save(member)
                             .doOnSuccess(saved -> log.debug("Member {} saved with new ADMIN role", saved.getId()));
                 })
