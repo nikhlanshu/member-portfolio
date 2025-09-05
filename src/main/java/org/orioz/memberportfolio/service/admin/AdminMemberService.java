@@ -11,7 +11,6 @@ import org.orioz.memberportfolio.dtos.admin.MembershipUpdateRequest;
 import org.orioz.memberportfolio.dtos.admin.PageResponse;
 import org.orioz.memberportfolio.dtos.auth.AdminVoidEntitlementCheckRequest;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
-import org.orioz.memberportfolio.exceptions.AlreadyHasAdminRoleException;
 import org.orioz.memberportfolio.exceptions.BadRequestException;
 import org.orioz.memberportfolio.exceptions.MaximumAdminThresholdException;
 import org.orioz.memberportfolio.exceptions.MemberNotFoundException;
@@ -55,13 +54,13 @@ public class AdminMemberService implements AdminService {
     public Mono<MemberResponse> addAdminRole(AdminCreationRequest adminCreationRequest) {
         String emailId = adminCreationRequest.getEmail();
         log.info("Attempting to add ADMIN role to emailId={}", emailId);
-
-        return memberRepository.findByEmail(emailId)
+        return entitlementValidator.validate(new AdminVoidEntitlementCheckRequest())
+                .then(memberRepository.findByEmail(emailId))
                 .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + emailId)))
-                .filter(member -> member.getRoles() == null || !member.getRoles().contains(Member.Role.ADMIN))
+                .filter(member -> (member.getRoles() == null || !member.getRoles().contains(Member.Role.ADMIN)) && member.getStatus().equals(Member.Status.CONFIRMED))
                 .switchIfEmpty(Mono.defer(() -> {
-                    log.warn("Member {} already has ADMIN role", emailId);
-                    return Mono.error(new AlreadyHasAdminRoleException("Member already has ADMIN role."));
+                    log.warn("Member {} is not eligible for ADMIN role", emailId);
+                    return Mono.error(new BadRequestException("Member is not eligible for ADMIN role"));
                 }))
                 .flatMap(member -> memberRepository.findByRolesContaining(Member.Role.ADMIN).count()
                         .filter(adminCount -> adminCount < adminConfig.getMaxMember())
