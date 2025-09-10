@@ -73,9 +73,9 @@ public class Member {
     private Status status;
 
     @CreatedDate
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     @LastModifiedDate
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
 
     @Data

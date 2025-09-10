@@ -219,6 +219,7 @@ public class AdminMemberService implements AdminService {
                     if (email != null && !email.isBlank()) {
                         log.info("Getting members by email");
                         return memberRepository.findByEmail(email)
+                                .filter(member -> member.getStatus().equals(Member.Status.CONFIRMED))
                                 .map(MemberResponse::fromMember)
                                 .flux();
                     }
@@ -227,11 +228,13 @@ public class AdminMemberService implements AdminService {
                     if (hasFirstName && hasLastName) {
                         log.info("Getting members by firstName and lastName");
                         return memberRepository.findByFirstNameAndLastName(firstName, lastName)
+                                .filter(member -> member.getStatus().equals(Member.Status.CONFIRMED))
                                 .map(MemberResponse::fromMember);
                     }
                     if (hasLastName) {
                         log.info("Getting members by lastName only");
                         return memberRepository.findByLastName(lastName)
+                                .filter(member -> member.getStatus().equals(Member.Status.CONFIRMED))
                                 .map(MemberResponse::fromMember);
                     }
                     return Flux.error(new BadRequestException(

@@ -32,6 +32,7 @@ public class SecurityConfig {
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers("/api/v1/members/register", "api/v1/members/auth/login", "/api/v1/token", "/api/v1/token/refresh").permitAll()
                         .pathMatchers("/api/v1/admin/**").hasAuthority(Member.Role.ADMIN.name())
+                        .pathMatchers("/v1/api/events/**").hasAuthority(Member.Role.ADMIN.name())
                         .pathMatchers("/api/v1/members/**").hasAuthority(Member.Role.MEMBER.name())
                         .anyExchange().authenticated()
                 )
