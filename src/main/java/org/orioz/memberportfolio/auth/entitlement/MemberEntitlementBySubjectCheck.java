@@ -2,8 +2,8 @@ package org.orioz.memberportfolio.auth.entitlement;
 
 import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.auth.jwt.JwtService;
-import org.orioz.memberportfolio.dtos.auth.EmailEntitlementCheckRequest;
 import org.orioz.memberportfolio.dtos.auth.IEntitlementCheckRequest;
+import org.orioz.memberportfolio.dtos.auth.MemberEntitlementCheckBySubjectRequest;
 import org.orioz.memberportfolio.exceptions.BadRequestException;
 import org.orioz.memberportfolio.exceptions.UnauthorizedException;
 import org.orioz.memberportfolio.models.Member;
@@ -12,31 +12,28 @@ import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-@Component
 @Slf4j
-public class EntitlementCheckByEmail implements IEntitlementCheck {
-
+@Component
+public class MemberEntitlementBySubjectCheck implements IEntitlementCheck {
     private final JwtService jwtService;
     private final MemberRepository memberRepository;
 
-    public EntitlementCheckByEmail(JwtService jwtService, MemberRepository memberRepository) {
+    public MemberEntitlementBySubjectCheck(JwtService jwtService, MemberRepository memberRepository) {
         this.jwtService = jwtService;
         this.memberRepository = memberRepository;
     }
 
     @Override
     public Mono<Boolean> isApplicable(IEntitlementCheckRequest request) {
-        return Mono.just(request instanceof EmailEntitlementCheckRequest);
+        return Mono.just(request instanceof MemberEntitlementCheckBySubjectRequest);
     }
 
     @Override
     public Mono<Void> apply(IEntitlementCheckRequest request) {
-        if (!(request instanceof EmailEntitlementCheckRequest emailRequest)) {
+        if (!(request instanceof MemberEntitlementCheckBySubjectRequest memberCheckRequest)) {
             return Mono.error(new BadRequestException("Invalid request type"));
         }
-
-        String email = emailRequest.getEmail();
-
+        log.info("Applying {}", this.getClass().getSimpleName());
         return ReactiveSecurityContextHolder.getContext()
                 .flatMap(ctx -> {
                     log.debug("Security context retrieved: {}", ctx);
@@ -51,7 +48,7 @@ public class EntitlementCheckByEmail implements IEntitlementCheck {
                                     "Token inspected successfully, subject: {}", tokenPayload.getSubject()));
                 })
                 .flatMap(tokenPayload ->
-                        memberRepository.findByEmail(email)
+                        memberRepository.findById(tokenPayload.getSubject())
                                 .map(member -> {
                                     boolean match = member.getId().equals(tokenPayload.getSubject())
                                             && member.getRoles().stream()
@@ -65,7 +62,7 @@ public class EntitlementCheckByEmail implements IEntitlementCheck {
                                 .defaultIfEmpty(false)
                 )
                 .flatMap(result -> {
-                    log.debug("Entitlement validation result for email {}: {}", email, result);
+                    log.debug("Entitlement validation result for subject: {}", result);
                     if (!result) {
                         return Mono.error(new UnauthorizedException("Entitlement failed"));
                     }

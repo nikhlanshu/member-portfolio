@@ -14,10 +14,11 @@ import java.time.LocalDateTime;
 public class Event {
     @Id
     private String id;
-    @Indexed(unique = true)
+    @Indexed
     private String title;
     private String description;
-    private String datetime;
+    @Indexed
+    private LocalDateTime datetime;
     private Place place;
     @CreatedDate
     private LocalDateTime createdAt;

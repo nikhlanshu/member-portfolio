@@ -3,6 +3,7 @@ package org.orioz.memberportfolio.service.event;
 import lombok.extern.slf4j.Slf4j;
 import org.orioz.memberportfolio.auth.entitlement.EntitlementValidator;
 import org.orioz.memberportfolio.dtos.auth.AdminVoidEntitlementCheckRequest;
+import org.orioz.memberportfolio.dtos.auth.MemberEntitlementCheckBySubjectRequest;
 import org.orioz.memberportfolio.models.Event;
 import org.orioz.memberportfolio.repositories.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -27,6 +29,7 @@ public class EventService {
 
     public Mono<Event> createEvent(Event event) {
         log.info("Creating new event: {}", event.getTitle());
+        event.setId(UUID.randomUUID().toString());
         return entitlementValidator.validate(new AdminVoidEntitlementCheckRequest())
                 .then(eventRepository.save(event))
                 .doOnSuccess(e -> log.info("Event created with id: {}", e.getId()))
@@ -35,7 +38,7 @@ public class EventService {
 
     public Flux<Event> getUpcomingEvents() {
         log.info("Fetching upcoming events");
-        return entitlementValidator.validate(new AdminVoidEntitlementCheckRequest())
+        return entitlementValidator.validate(new MemberEntitlementCheckBySubjectRequest())
                 .thenMany(eventRepository.findByDatetimeAfterOrderByDatetimeAsc(LocalDateTime.now()))
                 .doOnError(err -> log.error("Error fetching upcoming events: {}", err.getMessage()));
     }

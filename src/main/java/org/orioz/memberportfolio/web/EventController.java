@@ -34,7 +34,7 @@ public class EventController {
                 .map(savedEvent -> ResponseEntity.status(HttpStatus.CREATED).body(savedEvent));
     }
 
-    @GetMapping
+    @GetMapping("/upcoming")
     public Flux<Event> getUpcomingEvents() {
         return eventService.getUpcomingEvents();
     }
