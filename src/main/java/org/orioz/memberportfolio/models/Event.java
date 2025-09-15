@@ -4,6 +4,7 @@ import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Document(collection = "events")
-public class Event {
+public class Event implements Persistable<String> {
     @Id
     private String id;
     @Indexed
@@ -28,5 +29,9 @@ public class Event {
     public static class Place {
         private String name;
         private String address;
+    }
+    @Override
+    public boolean isNew() {
+        return createdAt == null;
     }
 }
