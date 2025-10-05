@@ -136,7 +136,7 @@ public class Member implements Persistable<String> {
     }
 
     public enum Role {
-        MEMBER, ADMIN, FINANCE
+        MEMBER, ADMIN, FINANCE, SUPER_MEMBER
     }
 
     public static Member toMember(MemberRegistrationRequest request, PasswordEncoder passwordEncoder) {
