@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -44,6 +45,12 @@ public class JwtService {
                 member.getLastName(),
                 member.getEmail(),
                 member.getDateOfBirth(),
+                Optional.ofNullable(member.getMembershipDetails())
+                        .map(Member.MembershipDetails::getStartDate)
+                        .orElse(null),
+                Optional.ofNullable(member.getMembershipDetails())
+                        .map(Member.MembershipDetails::getDuration)
+                        .orElse(null),
                 issuedAt,
                 expiration
         );
@@ -55,6 +62,8 @@ public class JwtService {
                 .claim("lastName", payload.getLastName())
                 .claim("dateOfBirth", payload.getDob().toString())
                 .claim("email", payload.getEmail())
+                .claim("memberSince", payload.getMemberSince().toString())
+                .claim("membershipDuration", payload.getDuration())
                 .setIssuedAt(Date.from(payload.getIssuedAt()))
                 .setExpiration(Date.from(payload.getExpiration()))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
