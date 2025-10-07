@@ -1,9 +1,12 @@
 package org.orioz.memberportfolio.auth.jwt;
 
 import lombok.extern.slf4j.Slf4j;
+import org.orioz.memberportfolio.auth.properties.SecurityMethod;
 import org.orioz.memberportfolio.auth.properties.SecurityProperties;
+import org.orioz.memberportfolio.auth.properties.SecurityRule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,7 +38,7 @@ public class JwtAuthenticationWebFilter implements WebFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
-        if (securityProperties.getPublicPaths().stream().anyMatch(path::equals)) {
+        if (isAnonymous(path, exchange.getRequest().getMethod())) {
             return chain.filter(exchange);
         }
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
@@ -58,5 +61,26 @@ public class JwtAuthenticationWebFilter implements WebFilter {
                     return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, error.getMessage(), error));
                 });
 
+    }
+
+    public boolean isAnonymous(String requestPath, HttpMethod requestMethod) {
+        // Iterate over all security rules
+        for (SecurityRule rule : securityProperties.getRules()) {
+            String configPath = rule.getPath();
+
+            // Simple prefix match; add better Ant-style path matching if needed
+            if (requestPath.startsWith(configPath.replace("/**", ""))) {
+                for (SecurityMethod method : rule.getMethods()) {
+                    String methodName = method.getName();
+
+                    if ("ALL".equalsIgnoreCase(methodName) || methodName.equalsIgnoreCase(requestMethod.name())) {
+                        if (method.getRoles().contains("ANONYMOUS")) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

@@ -1,7 +1,11 @@
 package org.orioz.memberportfolio.config;
 
 import org.orioz.memberportfolio.auth.jwt.JwtAuthenticationWebFilter;
+import org.orioz.memberportfolio.auth.properties.SecurityMethod;
+import org.orioz.memberportfolio.auth.properties.SecurityProperties;
+import org.orioz.memberportfolio.auth.properties.SecurityRule;
 import org.orioz.memberportfolio.models.Member;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
@@ -14,31 +18,59 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+
 import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 public class SecurityConfig {
+
     private final JwtAuthenticationWebFilter jwtAuthenticationWebFilter;
-    public SecurityConfig(JwtAuthenticationWebFilter jwtAuthenticationWebFilter) {
+    private final SecurityProperties securityProperties;
+
+    @Autowired
+    public SecurityConfig(
+            JwtAuthenticationWebFilter jwtAuthenticationWebFilter,
+            SecurityProperties securityProperties
+    ) {
         this.jwtAuthenticationWebFilter = jwtAuthenticationWebFilter;
+        this.securityProperties = securityProperties;
     }
+
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-        return http
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(customizer -> {})
-                .authorizeExchange(exchange -> exchange
-                        .pathMatchers("/api/v1/members/register", "api/v1/members/auth/login", "/api/v1/token", "/api/v1/token/refresh").permitAll()
-                        .pathMatchers("/api/v1/admin/**").hasAuthority(Member.Role.ADMIN.name())
-                        .pathMatchers("/v1/api/events/**").hasAnyAuthority(Member.Role.ADMIN.name(), Member.Role.MEMBER.name())
-                        .pathMatchers("/v1/api/news/**").hasAnyAuthority(Member.Role.ADMIN.name(), Member.Role.MEMBER.name())
-                        .pathMatchers("/api/v1/members/**").hasAuthority(Member.Role.MEMBER.name())
-                        .anyExchange().authenticated()
-                )
-                .addFilterAt(jwtAuthenticationWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)
-                .build();
+        http.csrf(ServerHttpSecurity.CsrfSpec::disable);
+        http.cors(cors -> {});
+
+        http.authorizeExchange(exchanges -> {
+            for (SecurityRule rule : securityProperties.getRules()) {
+                String path = rule.getPath();
+                for (SecurityMethod method : rule.getMethods()) {
+                    String methodName = method.getName();
+                    List<String> roles = method.getRoles();
+
+                    if ("ALL".equalsIgnoreCase(methodName)) {
+                        if (roles.contains("ANONYMOUS")) {
+                            exchanges.pathMatchers(path).permitAll();
+                        } else {
+                            exchanges.pathMatchers(path).hasAnyAuthority(roles.toArray(new String[0]));
+                        }
+                    } else {
+                        if (roles.contains("ANONYMOUS")) {
+                            exchanges.pathMatchers(org.springframework.http.HttpMethod.valueOf(methodName), path).permitAll();
+                        } else {
+                            exchanges.pathMatchers(org.springframework.http.HttpMethod.valueOf(methodName), path).hasAnyAuthority(roles.toArray(new String[0]));
+                        }
+                    }
+                }
+            }
+            exchanges.anyExchange().authenticated();
+        });
+
+        http.addFilterAt(jwtAuthenticationWebFilter, SecurityWebFiltersOrder.AUTHENTICATION);
+
+        return http.build();
     }
 
     @Bean
@@ -53,6 +85,7 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

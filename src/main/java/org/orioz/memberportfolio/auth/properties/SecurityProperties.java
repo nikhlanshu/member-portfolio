@@ -9,7 +9,7 @@ import java.util.List;
 @Configuration
 @ConfigurationProperties(prefix = "app.security")
 public class SecurityProperties {
-    private List<String> publicPaths;
     private String secret;
     private ExpiryData expiry;
+    private List<SecurityRule> rules;
 }

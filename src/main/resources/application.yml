@@ -1,0 +1,92 @@
+spring:
+  application:
+    name: member-portfolio
+
+app:
+  security:
+    secret: k8F^s@3pL!zA#9vRb7Ty6mZ*qD&XhN$WcMj4EuP!nLx2YgTfCz@VmKr#B1UsPw3De
+    expiry:
+      duration: 1000
+      unit: SECONDS
+    rules:
+      - path: /v1/api/news/**
+        methods:
+          - name: GET
+            roles: [ADMIN, MEMBER, FINANCE, SUPER_MEMBER]
+          - name: POST
+            roles: [ADMIN, FINANCE, SUPER_MEMBER]
+          - name: PUT
+            roles: [ADMIN, FINANCE, SUPER_MEMBER]
+          - name: PATCH
+            roles: [ADMIN, FINANCE, SUPER_MEMBER]
+          - name: DELETE
+            roles: [ADMIN, FINANCE, SUPER_MEMBER]
+
+      - path: /v1/api/events/**
+        methods:
+          - name: GET
+            roles: [ADMIN, MEMBER, FINANCE, SUPER_MEMBER]
+          - name: POST
+            roles: [ADMIN, FINANCE, SUPER_MEMBER]
+          - name: PUT
+            roles: [ADMIN, FINANCE, SUPER_MEMBER]
+          - name: PATCH
+            roles: [ADMIN, FINANCE, SUPER_MEMBER]
+          - name: DELETE
+            roles: [ADMIN, FINANCE, SUPER_MEMBER]
+
+      - path: /api/v1/admin/**
+        methods:
+          - name: ALL
+            roles: [ADMIN]
+
+      - path: /api/v1/members/**
+        methods:
+          - name: ALL
+            roles: [MEMBER]
+
+      - path: /api/v1/register
+        methods:
+          - name: ALL
+            roles: [ANONYMOUS]
+
+      - path: /api/v1/auth/login
+        methods:
+          - name: ALL
+            roles: [ANONYMOUS]
+
+      - path: /api/v1/token
+        methods:
+          - name: ALL
+            roles: [ANONYMOUS]
+
+      - path: /api/v1/token/refresh
+        methods:
+          - name: ALL
+            roles: [ANONYMOUS]
+
+
+
+  send-communication:
+    templates:
+      REGISTRATION:
+        subject: "Your Orioz Account Registration has been Successful"
+        template-path: templates/email/member-registration-success.html
+      APPROVAL:
+        subject: "Your Orioz Account Has Been Approved"
+        template-path: templates/email/registration-approved.html
+      REJECTION:
+        subject: "Your Orioz Account Has Been Rejected"
+        template-path: templates/email/registration-rejected.html
+    from:
+      GMAIL:
+        host: smtp.gmail.com
+        mail-port: 587
+        username: nikhil.cet.08@gmail.com
+        password: dvhjteaatkdwwrks
+        auth: true
+        enable: true
+        content: "text/html; charset=UTF-8"
+
+  news:
+    retrieve-limit: 10

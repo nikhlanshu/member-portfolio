@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 
 @Validated
 @RestController
-@RequestMapping(value = "/api/v1/members/auth", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/v1/auth", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 public class AuthController {
 
     private final LogInService logInService;
