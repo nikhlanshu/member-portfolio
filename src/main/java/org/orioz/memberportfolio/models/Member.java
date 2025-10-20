@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.orioz.memberportfolio.dtos.member.MemberRegistrationRequest;
 import org.orioz.memberportfolio.dtos.member.UpdateMemberRequest;
+import org.orioz.memberportfolio.exceptions.BadRequestException;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -17,8 +18,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -72,6 +75,10 @@ public class Member implements Persistable<String> {
 
     private Status status;
 
+    public boolean isMemberConfirmed(){
+        return getStatus().equals(Status.CONFIRMED);
+    }
+
     @CreatedDate
     private LocalDateTime createdAt;
     @LastModifiedDate
@@ -119,8 +126,7 @@ public class Member implements Persistable<String> {
     public enum MembershipDuration {
         YEARLY,
         MONTHLY,
-        LIFETIME,
-        NONE
+        LIFETIME
     }
 
     @Data
@@ -136,7 +142,10 @@ public class Member implements Persistable<String> {
     }
 
     public enum Role {
-        MEMBER, ADMIN, FINANCE, SUPER_MEMBER
+        MEMBER, ADMIN, FINANCE, SUPER_MEMBER;
+        public boolean canAssign(Role targetRole) {
+            return this.ordinal() <= targetRole.ordinal();
+        }
     }
 
     public static Member toMember(MemberRegistrationRequest request, PasswordEncoder passwordEncoder) {
@@ -227,4 +236,14 @@ public class Member implements Persistable<String> {
         existing.setCountry(incoming.getCountry());
         existing.setPrimary(incoming.isPrimary());
     }
+
+    public Role getHighestRole() {
+        return Optional.ofNullable(roles)
+                .filter(r -> !r.isEmpty())
+                .orElseThrow(() -> new BadRequestException("No valid role found"))
+                .stream()
+                .min(Comparator.comparingInt(Role::ordinal))
+                .orElseThrow(() -> new BadRequestException("No valid role found"));
+    }
+
 }

@@ -5,19 +5,19 @@ import org.orioz.memberportfolio.auth.entitlement.EntitlementValidator;
 import org.orioz.memberportfolio.auth.properties.SendCommunication;
 import org.orioz.memberportfolio.comm.dto.CommunicationStage;
 import org.orioz.memberportfolio.comm.dto.TemplateProvider;
-import org.orioz.memberportfolio.config.AdminConfig;
-import org.orioz.memberportfolio.dtos.admin.AdminCreationRequest;
+import org.orioz.memberportfolio.dtos.admin.AddRoleRequest;
 import org.orioz.memberportfolio.dtos.admin.MembershipUpdateRequest;
 import org.orioz.memberportfolio.dtos.admin.PageResponse;
 import org.orioz.memberportfolio.dtos.auth.AdminVoidEntitlementCheckRequest;
+import org.orioz.memberportfolio.dtos.auth.AssignRoleEntitlementCheckRequest;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
 import org.orioz.memberportfolio.exceptions.BadRequestException;
-import org.orioz.memberportfolio.exceptions.MaximumAdminThresholdException;
 import org.orioz.memberportfolio.exceptions.MemberNotFoundException;
 import org.orioz.memberportfolio.exceptions.MemberNotInPendingStatusException;
 import org.orioz.memberportfolio.models.Member;
 import org.orioz.memberportfolio.repositories.MemberRepository;
 import org.orioz.memberportfolio.repositories.SendCommunicationRepository;
+import org.orioz.memberportfolio.service.handler.role.AssignRoleHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -34,57 +34,33 @@ import java.util.stream.Collectors;
 @Service
 public class AdminMemberService implements AdminService {
     private final MemberRepository memberRepository;
-    private final AdminConfig adminConfig;
     private final EntitlementValidator entitlementValidator;
 
     private final SendCommunication sendCommunication;
 
     private final SendCommunicationRepository sendCommunicationRepository;
+    private final AssignRoleHandler assignRoleHandler;
 
     @Autowired
-    public AdminMemberService(MemberRepository memberRepository, AdminConfig adminConfig, EntitlementValidator entitlementValidator, SendCommunication sendCommunication, SendCommunicationRepository sendCommunicationRepository) {
+    public AdminMemberService(MemberRepository memberRepository, EntitlementValidator entitlementValidator, SendCommunication sendCommunication, SendCommunicationRepository sendCommunicationRepository, AssignRoleHandler assignRoleHandler) {
         this.memberRepository = memberRepository;
-        this.adminConfig = adminConfig;
         this.entitlementValidator = entitlementValidator;
         this.sendCommunication = sendCommunication;
         this.sendCommunicationRepository = sendCommunicationRepository;
+        this.assignRoleHandler = assignRoleHandler;
     }
 
     @Override
-    public Mono<MemberResponse> addAdminRole(AdminCreationRequest adminCreationRequest) {
-        String emailId = adminCreationRequest.getEmail();
-        log.info("Attempting to add ADMIN role to emailId={}", emailId);
-        return entitlementValidator.validate(new AdminVoidEntitlementCheckRequest())
-                .then(memberRepository.findByEmail(emailId))
-                .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + emailId)))
-                .filter(member -> (member.getRoles() == null || !member.getRoles().contains(Member.Role.ADMIN)) && member.getStatus().equals(Member.Status.CONFIRMED))
-                .switchIfEmpty(Mono.defer(() -> {
-                    log.warn("Member {} is not eligible for ADMIN role", emailId);
-                    return Mono.error(new BadRequestException("Member is not eligible for ADMIN role"));
-                }))
-                .flatMap(member -> memberRepository.findByRolesContaining(Member.Role.ADMIN).count()
-                        .filter(adminCount -> adminCount < adminConfig.getMaxMember())
-                        .switchIfEmpty(Mono.defer(() -> {
-                            log.warn("Maximum number of admin members reached: {}", adminConfig.getMaxMember());
-                            return Mono.error(new MaximumAdminThresholdException("Maximum " + adminConfig.getMaxMember() + " admin members allowed."));
-                        }))
-                        .map(adminCount -> member)
-                )
-                .flatMap(member -> {
-                    member.getRoles().add(Member.Role.ADMIN);
-                    log.info("Assigning ADMIN role to member {}", emailId);
-                    return memberRepository.save(member)
-                            .doOnSuccess(saved -> log.debug("Member {} saved with new ADMIN role", saved.getId()));
-                })
-
-                .map(MemberResponse::fromMember);
+    public Mono<Void> addRole(AddRoleRequest request) {
+        log.info("Attempting to add role={} to emailId={}", request.getRole().name(), request.getEmail());
+        return entitlementValidator.validate(new AssignRoleEntitlementCheckRequest(request.getRole()))
+                .then(assignRoleHandler.handle(request));
     }
 
 
     @Override
     public Mono<MemberResponse> confirmMember(String memberEmail) {
         log.info("Confirming member with ID={}", memberEmail);
-
         return entitlementValidator.validate(new AdminVoidEntitlementCheckRequest())
                 .then(memberRepository.findByEmail(memberEmail))
                 .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + memberEmail)))

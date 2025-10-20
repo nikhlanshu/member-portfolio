@@ -40,7 +40,7 @@ public class MemberResponse {
         response.setProfilePictureUrl(member.getProfilePictureUrl());
         response.setRoles(member.getRoles());
         response.setStatus(member.getStatus());
-        if(member.getMembershipDetails() != null && member.getMembershipDetails().getDuration().equals(Member.MembershipDuration.NONE)) {
+        if(member.getMembershipDetails() != null && member.getMembershipDetails().getDuration() != null) {
             response.isMember = true;
             response.memberSince = member.getMembershipDetails().getStartDate();
         }

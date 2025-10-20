@@ -1,7 +1,7 @@
 package org.orioz.memberportfolio.web;
 
 import jakarta.validation.Valid;
-import org.orioz.memberportfolio.dtos.admin.AdminCreationRequest;
+import org.orioz.memberportfolio.dtos.admin.AddRoleRequest;
 import org.orioz.memberportfolio.dtos.admin.MembershipUpdateRequest;
 import org.orioz.memberportfolio.dtos.admin.PageResponse;
 import org.orioz.memberportfolio.dtos.member.MemberResponse;
@@ -87,10 +87,10 @@ public class AdminController {
      * @param request AdminCreationRequest containing member ID.
      * @return Updated MemberResponse.
      */
-    @PatchMapping(value = "/add-admin")
-    public Mono<ResponseEntity<MemberResponse>> addAdmin(@Valid @RequestBody AdminCreationRequest request) {
-        return adminService.addAdminRole(request)
-                .map(memberResponse -> ResponseEntity.status(HttpStatus.OK).body(memberResponse));
+    @PatchMapping("/add-role")
+    public Mono<ResponseEntity<Void>> addRole(@Valid @RequestBody AddRoleRequest request) {
+        return adminService.addRole(request)
+                .then(Mono.just(ResponseEntity.status(HttpStatus.CREATED).build()));
     }
 
     /**
