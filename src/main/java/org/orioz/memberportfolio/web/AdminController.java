@@ -88,9 +88,13 @@ public class AdminController {
      * @return Updated MemberResponse.
      */
     @PatchMapping("/add-role")
-    public Mono<ResponseEntity<Void>> addRole(@Valid @RequestBody AddRoleRequest request) {
+    public Mono<ResponseEntity<MemberResponse>> addRole(@Valid @RequestBody AddRoleRequest request) {
         return adminService.addRole(request)
-                .then(Mono.just(ResponseEntity.status(HttpStatus.CREATED).build()));
+                .map(memberResponse ->
+                        ResponseEntity
+                                .status(HttpStatus.CREATED)
+                                .body(memberResponse)
+                );
     }
 
     /**

@@ -19,7 +19,7 @@ public class AssignRoleHandler {
         this.memberRepository = memberRepository;
     }
 
-    public Mono<Void> handle(AddRoleRequest addRoleRequest) {
+    public Mono<Member> handle(AddRoleRequest addRoleRequest) {
         return memberRepository.findByEmail(addRoleRequest.getEmail())
                 .filter(Member::isMemberConfirmed)
                 .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with Email ID: " + addRoleRequest.getEmail())))
@@ -28,7 +28,6 @@ public class AssignRoleHandler {
                             .collect(Collectors.toSet());
                     member.setRoles(updatedRoles.stream().toList());
                     return memberRepository.save(member);
-                })
-                .then();
+                });
     }
 }

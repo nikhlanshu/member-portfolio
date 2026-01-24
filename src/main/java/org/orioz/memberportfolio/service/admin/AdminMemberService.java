@@ -51,10 +51,12 @@ public class AdminMemberService implements AdminService {
     }
 
     @Override
-    public Mono<Void> addRole(AddRoleRequest request) {
+    public Mono<MemberResponse> addRole(AddRoleRequest request) {
         log.info("Attempting to add role={} to emailId={}", request.getRole().name(), request.getEmail());
-        return entitlementValidator.validate(new AssignRoleEntitlementCheckRequest(request.getRole()))
-                .then(assignRoleHandler.handle(request));
+        return entitlementValidator
+                .validate(new AssignRoleEntitlementCheckRequest(request.getRole()))
+                .then(assignRoleHandler.handle(request))
+                .map(MemberResponse::fromMember);
     }
 
 
@@ -94,7 +96,6 @@ public class AdminMemberService implements AdminService {
     @Override
     public Mono<MemberResponse> rejectMember(String memberEmail) {
         log.info("Rejecting member with ID={}", memberEmail);
-
         return entitlementValidator.validate(new AdminVoidEntitlementCheckRequest())
                 .then(memberRepository.findByEmail(memberEmail))
                 .switchIfEmpty(Mono.error(new MemberNotFoundException("Member not found with ID: " + memberEmail)))
